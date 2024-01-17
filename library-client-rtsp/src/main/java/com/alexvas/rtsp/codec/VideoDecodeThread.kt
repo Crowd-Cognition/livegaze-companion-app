@@ -1,14 +1,17 @@
 package com.alexvas.rtsp.codec
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodec.OnFrameRenderedListener
 import android.media.MediaFormat
 import android.os.Build
+import android.os.Debug
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Surface
+import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.utils.MediaCodecUtils
 import com.alexvas.utils.capabilitiesToString
 import com.google.android.exoplayer2.util.Util
@@ -17,7 +20,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class VideoDecodeThread (
-        private val surface: Surface,
+//        private val surface: Surface,
         private val mimeType: String,
         private val width: Int,
         private val height: Int,
@@ -28,6 +31,9 @@ class VideoDecodeThread (
     private val uiHandler = Handler(Looper.getMainLooper())
     private var exitFlag = AtomicBoolean(false)
     private var firstFrameRendered = false
+    public var clientListener : RTSPClientListener? = null;
+    private var newHeight = height;
+    private var newWidth = width;
 
     interface VideoDecoderListener {
         /** Video decoder successfully started */
@@ -96,7 +102,7 @@ class VideoDecodeThread (
         val safeWidthHeight = getDecoderSafeWidthHeight(decoder)
         val format = MediaFormat.createVideoFormat(mimeType, safeWidthHeight.first, safeWidthHeight.second)
         if (DEBUG)
-            Log.d(TAG, "Configuring surface ${safeWidthHeight.first}x${safeWidthHeight.second} w/ '$mimeType', $surface valid=${surface.isValid}")
+            Log.d(TAG, "Configuring surface ${safeWidthHeight.first}x${safeWidthHeight.second} w/ '$mimeType'")
         else
             Log.i(TAG, "Configuring surface ${safeWidthHeight.first}x${safeWidthHeight.second} w/ '$mimeType'")
         format.setInteger(MediaFormat.KEY_ROTATION, rotation)
@@ -144,7 +150,7 @@ class VideoDecodeThread (
         }
         decoder.setOnFrameRenderedListener(frameRenderedListener, null)
         val format = getDecoderMediaFormat(decoder)
-        decoder.configure(format, surface, null, 0)
+        decoder.configure(format, null, null, 0)
         decoder.start()
         return decoder
     }
@@ -236,6 +242,8 @@ class VideoDecodeThread (
                                 MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                                     Log.d(TAG, "Decoder format changed: ${decoder.outputFormat}")
                                     val widthHeight = getWidthHeight(decoder.outputFormat)
+                                    newWidth = widthHeight.first
+                                    newHeight = widthHeight.second
                                     val rotation = if (decoder.outputFormat.containsKey(MediaFormat.KEY_ROTATION)) {
                                         decoder.outputFormat.getInteger(MediaFormat.KEY_ROTATION)
                                     } else {
@@ -259,8 +267,9 @@ class VideoDecodeThread (
                                 // Frame decoded
                                 else -> {
                                     if (outIndex >= 0) {
-                                        val render = bufferInfo.size != 0 && !exitFlag.get() && surface.isValid
+                                        val render = bufferInfo.size != 0 && !exitFlag.get()
                                         if (DEBUG) Log.i(TAG, "\tFrame decoded [outIndex=$outIndex, length=${bufferInfo.size}, render=$render]")
+                                        decodeYuv(decoder, bufferInfo, outIndex);
                                         decoder.releaseOutputBuffer(outIndex, render)
                                     } else {
                                         Log.e(TAG, "Obtaining frame failed w/ error code $outIndex (length: ${bufferInfo.size})")
@@ -291,7 +300,7 @@ class VideoDecodeThread (
                             try {
                                 decoder.stop()
                                 val format = getDecoderMediaFormat(decoder)
-                                decoder.configure(format, surface, null, 0)
+                                decoder.configure(format, null, null, 0)
                                 decoder.start()
                                 Log.i(TAG, "Video decoder recovering succeeded")
                             } catch (e2: Throwable) {
@@ -340,9 +349,24 @@ class VideoDecodeThread (
         if (DEBUG) Log.d(TAG, "$name stopped")
     }
 
+    private fun decodeYuv(decoder: MediaCodec, info: MediaCodec.BufferInfo, index: Int) {
+        try {
+            val buffer = decoder.getOutputBuffer(index)
+            if (DEBUG)Log.d("YUV RECORDER", "${info.size} ${info.offset}")
+            val yuv420ByteArray = ByteArray(buffer!!.remaining())
+            buffer.get(yuv420ByteArray)
+            clientListener?.onRTSPFrameReceived(1088, 1072,
+                yuv420ByteArray
+            )
+
+        } catch (t: Throwable) {
+            t.printStackTrace()
+        }
+    }
+
     companion object {
         private val TAG: String = VideoDecodeThread::class.java.simpleName
-        private const val DEBUG = false
+        private const val DEBUG = true
 
         private val DEQUEUE_INPUT_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(500)
         private val DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(100)

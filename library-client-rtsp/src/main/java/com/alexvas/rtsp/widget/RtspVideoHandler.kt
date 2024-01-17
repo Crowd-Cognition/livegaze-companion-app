@@ -1,14 +1,12 @@
 package com.alexvas.rtsp.widget
 
-import android.content.Context
 import android.media.MediaFormat
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceHolder
-import android.view.SurfaceView
+import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.rtsp.RtspClient
 import com.alexvas.rtsp.RtspClient.SdpInfo
 import com.alexvas.rtsp.codec.AudioDecodeThread
@@ -19,7 +17,7 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
 
-open class RtspSurfaceView: SurfaceView {
+open class RtspVideoHandler {
 
     private lateinit var uri: Uri
     private var username: String? = null
@@ -42,6 +40,8 @@ open class RtspSurfaceView: SurfaceView {
     private var audioChannelCount: Int = 0
     private var audioCodecConfig: ByteArray? = null
     private var firstFrameRendered = false
+
+    var rtspFrameListener : RTSPClientListener? = null;
 
     /**
      * Show more debug info on console on runtime.
@@ -195,22 +195,22 @@ open class RtspSurfaceView: SurfaceView {
         }
     }
 
-    constructor(context: Context) : super(context) {
-        initView(context, null, 0)
-    }
+//    constructor(context: Context) : super(context) {
+//        initView(context, null, 0)
+//    }
+//
+//    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+//        initView(context, attrs, 0)
+//    }
+//
+//    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+//        initView(context, attrs, defStyleAttr)
+//    }
 
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        initView(context, attrs, 0)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        initView(context, attrs, defStyleAttr)
-    }
-
-    private fun initView(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-        if (DEBUG) Log.v(TAG, "initView()")
-        holder.addCallback(surfaceCallback)
-    }
+//    private fun initView(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
+//        if (DEBUG) Log.v(TAG, "initView()")
+//        holder.addCallback(surfaceCallback)
+//    }
 
     fun init(uri: Uri, username: String?, password: String?) {
         init(uri, username, password, null)
@@ -299,7 +299,8 @@ open class RtspSurfaceView: SurfaceView {
             firstFrameRendered = false
             Log.i(TAG, "Starting video decoder with mime type \"$videoMimeType\"")
             videoDecodeThread = VideoDecodeThread(
-                holder.surface, videoMimeType, surfaceWidth, surfaceHeight, videoRotation, videoFrameQueue, videoDecoderListener)
+                videoMimeType, surfaceWidth, surfaceHeight, videoRotation, videoFrameQueue, videoDecoderListener)
+            videoDecodeThread!!.clientListener = rtspFrameListener
             videoDecodeThread!!.apply {
                 name = "RTSP video thread [${getUriName()}]"
                 start()
@@ -314,6 +315,7 @@ open class RtspSurfaceView: SurfaceView {
                 start()
             }
         }
+
     }
 
     private fun onRtspClientStopped() {
@@ -337,9 +339,10 @@ open class RtspSurfaceView: SurfaceView {
     }
 
     companion object {
-        private val TAG: String = RtspSurfaceView::class.java.simpleName
+        private val TAG: String = RtspVideoHandler::class.java.simpleName
         private const val DEBUG = false
         private const val DEFAULT_RTSP_PORT = 554
     }
+
 
 }

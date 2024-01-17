@@ -76,34 +76,6 @@
                 android:layout_gravity="center"
                 android:id="@+id/tgRotation"
                 app:singleSelection="true">
-
-                <Button
-                    android:id="@+id/bnRotate0"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0" />
-
-                <Button
-                    android:id="@+id/bnRotate90"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="90" />
-
-                <Button
-                    android:id="@+id/bnRotate180"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="180" />
-
-                <Button
-                    android:id="@+id/bnRotate270"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="270" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
         </LinearLayout>
 
@@ -151,10 +123,6 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:animateLayoutChanges="true">
-            <com.alexvas.rtsp.widget.RtspSurfaceView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/svVideo" />
             <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

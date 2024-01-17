@@ -1,11 +1,8 @@
 package com.alexvas.rtsp.demo.live
 
 import android.annotation.SuppressLint
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -13,18 +10,27 @@ import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.alexvas.rtsp.RTSPClientListener
+import com.google.android.renderscript.Toolkit
+import com.google.android.renderscript.YuvFormat
 import com.alexvas.rtsp.demo.databinding.FragmentLiveBinding
-import com.alexvas.rtsp.widget.RtspSurfaceView
-import java.util.concurrent.atomic.AtomicBoolean
-
+import com.alexvas.rtsp.widget.RtspVideoHandler
+import org.opencv.android.OpenCVLoader
+import org.opencv.android.Utils
+import org.opencv.aruco.Aruco
+import org.opencv.aruco.Dictionary
+import org.opencv.core.Mat
+import org.opencv.imgproc.Imgproc
 
 @SuppressLint("LogNotTimber")
 class LiveFragment : Fragment() {
 
     private lateinit var binding: FragmentLiveBinding
     private lateinit var liveViewModel: LiveViewModel
+    private var arucoDictionary : Dictionary? = null
+    private var surfaceHandler : RtspVideoHandler? = null;
 
-    private val rtspStatusListener = object: RtspSurfaceView.RtspStatusListener {
+    private val rtspStatusListener = object: RtspVideoHandler.RtspStatusListener {
         override fun onRtspStatusConnecting() {
             binding.apply {
                 tvStatus.text = "RTSP connecting"
@@ -97,35 +103,18 @@ class LiveFragment : Fragment() {
         }
     }
 
-    private fun getSnapshot(): Bitmap? {
-        if (DEBUG) Log.v(TAG, "getSnapshot()")
-        val surfaceBitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
-        val lock = Object()
-        val success = AtomicBoolean(false)
-        val thread = HandlerThread("PixelCopyHelper")
-        thread.start()
-        val sHandler = Handler(thread.looper)
-        val listener = PixelCopy.OnPixelCopyFinishedListener { copyResult ->
-            success.set(copyResult == PixelCopy.SUCCESS)
-            synchronized (lock) {
-                lock.notify()
-            }
-        }
-        synchronized (lock) {
-            PixelCopy.request(binding.svVideo.holder.surface, surfaceBitmap, listener, sHandler)
-            lock.wait()
-        }
-        thread.quitSafely()
-        return if (success.get()) surfaceBitmap else null
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         if (DEBUG) Log.v(TAG, "onCreateView()")
 
+        if(!OpenCVLoader.initDebug()) {
+        }
+        arucoDictionary = Aruco.getPredefinedDictionary(Aruco.DICT_ARUCO_ORIGINAL)
+
         liveViewModel = ViewModelProvider(this).get(LiveViewModel::class.java)
         binding = FragmentLiveBinding.inflate(inflater, container, false)
-
-        binding.svVideo.setStatusListener(rtspStatusListener)
+        var surfaceHandler = RtspVideoHandler();
+        surfaceHandler.rtspFrameListener = rtspFrameListener;
+        surfaceHandler.setStatusListener(rtspStatusListener)
         binding.etRtspRequest.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
             }
@@ -176,42 +165,14 @@ class LiveFragment : Fragment() {
                 binding.etRtspPassword.setText(it)
         }
 
-        binding.bnRotate0.setOnClickListener {
-            binding.svVideo.videoRotation = 0
-        }
-
-        binding.bnRotate90.setOnClickListener {
-            binding.svVideo.videoRotation = 90
-        }
-
-        binding.bnRotate180.setOnClickListener {
-            binding.svVideo.videoRotation = 180
-        }
-
-        binding.bnRotate270.setOnClickListener {
-            binding.svVideo.videoRotation = 270
-        }
-
-        binding.bnRotate0.performClick()
-
         binding.bnStartStop.setOnClickListener {
-            if (binding.svVideo.isStarted()) {
-                binding.svVideo.stop()
+            if (surfaceHandler.isStarted()) {
+                surfaceHandler.stop()
             } else {
                 val uri = Uri.parse(liveViewModel.rtspRequest.value)
-                binding.svVideo.init(uri, liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
-                binding.svVideo.debug = binding.cbDebug.isChecked
-                binding.svVideo.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked)
-            }
-        }
-
-        binding.bnSnapshot.setOnClickListener {
-            val bitmap = getSnapshot()
-            // TODO Save snapshot to DCIM folder
-            if (bitmap != null) {
-                Toast.makeText(requireContext(), "Snapshot succeeded", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(requireContext(), "Snapshot failed", Toast.LENGTH_LONG).show()
+                surfaceHandler.init(uri, liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
+                surfaceHandler.debug = binding.cbDebug.isChecked
+                surfaceHandler.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked)
             }
         }
         return binding.root
@@ -224,19 +185,32 @@ class LiveFragment : Fragment() {
     }
 
     override fun onPause() {
-        val started = binding.svVideo.isStarted()
-        if (DEBUG) Log.v(TAG, "onPause(), started:$started")
+        if (DEBUG) Log.v(TAG, "onPause()")
         super.onPause()
         liveViewModel.saveParams(requireContext())
-
-        if (started) {
-            binding.svVideo.stop()
-        }
+        surfaceHandler?.stop()
     }
 
     companion object {
         private val TAG: String = LiveFragment::class.java.simpleName
         private const val DEBUG = true
+    }
+
+    private val rtspFrameListener = object : RTSPClientListener {
+        override fun onRTSPFrameReceived(width: Int, height: Int, yuv420Bytes: ByteArray?) {
+            if (yuv420Bytes == null || yuv420Bytes.size < 10) return;
+            val bitmap = Toolkit.yuvToRgbBitmap(yuv420Bytes, width, height, YuvFormat.YUV_420_888)
+            val img = Mat()
+            Utils.bitmapToMat(bitmap, img)
+            val imgGray = Mat()
+            Utils.bitmapToMat(bitmap, imgGray)
+            Imgproc.cvtColor(img, img, Imgproc.COLOR_RGBA2RGB)
+            Imgproc.cvtColor(imgGray, imgGray, Imgproc.COLOR_RGB2GRAY)
+            var markerList = mutableListOf<Mat>()
+            var ids = Mat()
+            Aruco.detectMarkers(imgGray, arucoDictionary,markerList, ids)
+            Log.d("RTSP Listener", "Image Received ${ids.size()}")
+        }
     }
 
 }
