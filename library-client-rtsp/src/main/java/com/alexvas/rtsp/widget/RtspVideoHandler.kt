@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.SurfaceHolder
+import com.alexvas.rtsp.GazeRtspClient
 import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.rtsp.RtspClient
 import com.alexvas.rtsp.RtspClient.SdpInfo
@@ -20,12 +21,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 open class RtspVideoHandler {
 
     private lateinit var uri: Uri
+    private var gazeUri : Uri? = null
     private var username: String? = null
     private var password: String? = null
     private var userAgent: String? = null
     private var requestVideo = true
     private var requestAudio = true
     private var rtspThread: RtspThread? = null
+    private var gazeRtspThread: GazeRtspThread? = null
     private var videoFrameQueue = FrameQueue(60)
     private var audioFrameQueue = FrameQueue(10)
     private var videoDecodeThread: VideoDecodeThread? = null
@@ -66,6 +69,34 @@ open class RtspVideoHandler {
         fun onRtspStatusFailedUnauthorized() {}
         fun onRtspStatusFailed(message: String?) {}
         fun onRtspFirstFrameRendered() {}
+    }
+    
+    private val gazeClientListener = object: GazeRtspClient.GazeRtspClientListener {
+        override fun onRtspConnecting() {
+            if (DEBUG) Log.v(TAG+"Gaze", "onRtspConnecting()")
+        }
+
+        override fun onRtspConnected() {
+            if (DEBUG) Log.v(TAG+"Gaze", "onRtspConnected()")
+        }
+
+        override fun onRtspDisconnecting() {
+            if (DEBUG) Log.v(TAG + "Gaze", "onRtspDisconnecting()")
+        }
+
+        override fun onRtspDisconnected() {
+            if (DEBUG) Log.v(TAG + "Gaze", "onRtspDisconnected()")
+        }
+
+        override fun onRtspFailedUnauthorized() {
+            if (DEBUG) Log.v(TAG + "Gaze", "unauthorize()")
+        }
+
+        override fun onRtspFailed(message: String?) {
+            if (DEBUG) Log.v(TAG + "Gaze", "rtspFailed()")
+
+        }
+
     }
 
     private val proxyClientListener = object: RtspClient.RtspClientListener {
@@ -213,12 +244,13 @@ open class RtspVideoHandler {
 //    }
 
     fun init(uri: Uri, username: String?, password: String?) {
-        init(uri, username, password, null)
+        init(uri,null, username, password, null)
     }
 
-    fun init(uri: Uri, username: String?, password: String?, userAgent: String?) {
+    fun init(uri: Uri, gazeUri: Uri?,username: String?, password: String?, userAgent: String?) {
         if (DEBUG) Log.v(TAG, "init(uri='$uri', username=$username, password=$password, userAgent='$userAgent')")
         this.uri = uri
+        this.gazeUri = gazeUri
         this.username = username
         this.password = password
         this.userAgent = userAgent
@@ -232,11 +264,17 @@ open class RtspVideoHandler {
         rtspThread = RtspThread()
         rtspThread!!.name = "RTSP IO thread [${getUriName()}]"
         rtspThread!!.start()
+
+        gazeRtspThread = GazeRtspThread()
+        gazeRtspThread!!.name = "Gaze RTSP IO thread [${getUriName()}]"
+        gazeRtspThread!!.start()
     }
 
     fun stop() {
         if (DEBUG) Log.v(TAG, "stop()")
         rtspThread?.stopAsync()
+        gazeRtspThread?.stopAsync()
+        gazeRtspThread = null
         rtspThread = null
     }
 
@@ -275,11 +313,49 @@ open class RtspVideoHandler {
                     .build()
                 rtspClient.execute()
 
+                val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
+                    .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
+                gazeRtspClient.execute()
+
                 NetUtils.closeSocket(socket)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
             onRtspClientStopped()
+        }
+    }
+
+    inner class GazeRtspThread: Thread() {
+        private var rtspStopped: AtomicBoolean = AtomicBoolean(false)
+
+        fun stopAsync() {
+            if (DEBUG) Log.v(TAG, "stopAsync()")
+            rtspStopped.set(true)
+            // Wake up sleep() code
+            interrupt()
+        }
+
+        override fun run() {
+            onGazeRtspClientStarted()
+            val port = if (gazeUri!!.port == -1) DEFAULT_RTSP_PORT else gazeUri!!.port
+            try {
+                if (DEBUG) Log.d(TAG + "Gaze", "Connecting to ${gazeUri!!.host.toString()}:$port...")
+
+                val socket: Socket = if (gazeUri!!.scheme?.lowercase() == "rtsps")
+                    NetUtils.createSslSocketAndConnect(gazeUri!!.host.toString(), port, 5000)
+                else
+                    NetUtils.createSocketAndConnect(gazeUri!!.host.toString(), port, 5000)
+
+                // Blocking call until stopped variable is true or connection failed
+                val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
+                    .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
+                gazeRtspClient.execute()
+
+                NetUtils.closeSocket(socket)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            onGazeRtspClientStopped()
         }
     }
 
@@ -291,6 +367,10 @@ open class RtspVideoHandler {
     private fun onRtspClientStarted() {
         if (DEBUG) Log.v(TAG, "onRtspClientStarted()")
         uiHandler.post { statusListener?.onRtspStatusConnected() }
+    }
+
+    private fun onGazeRtspClientStarted() {
+        if (DEBUG) Log.v(TAG + "GAZE", "onGazeRtspClientStarted()");
     }
 
     private fun onRtspClientConnected() {
@@ -323,6 +403,12 @@ open class RtspVideoHandler {
         uiHandler.post { statusListener?.onRtspStatusDisconnected() }
         stopDecoders()
         rtspThread = null
+    }
+
+    private fun onGazeRtspClientStopped() {
+        if (DEBUG) Log.v(TAG+ " Gaze", "onRtspClientStopped()")
+        stopDecoders()
+        gazeRtspThread = null
     }
 
     private fun stopDecoders() {

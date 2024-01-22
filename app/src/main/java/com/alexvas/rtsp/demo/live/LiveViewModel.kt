@@ -10,7 +10,7 @@ private const val RTSP_REQUEST_KEY = "rtsp_request"
 private const val RTSP_USERNAME_KEY = "rtsp_username"
 private const val RTSP_PASSWORD_KEY = "rtsp_password"
 
-private const val DEFAULT_RTSP_REQUEST = "rtsp://10.181.79.159:8086/?camera=world"
+private const val DEFAULT_RTSP_REQUEST = "rtsp://10.181.64.240:8086/?camera=world"
 private const val DEFAULT_RTSP_USERNAME = ""
 private const val DEFAULT_RTSP_PASSWORD = ""
 

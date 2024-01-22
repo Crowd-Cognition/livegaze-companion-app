@@ -170,7 +170,12 @@ class LiveFragment : Fragment() {
                 surfaceHandler.stop()
             } else {
                 val uri = Uri.parse(liveViewModel.rtspRequest.value)
-                surfaceHandler.init(uri, liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
+                val uriParts = liveViewModel.rtspRequest.value!!.split("?").toMutableList()
+                uriParts[1] = "camera\u003dgaze"
+                val gazeUriText = uriParts.joinToString(separator = "?")
+                Log.i("GazeURI",gazeUriText)
+                val gazeUri = Uri.parse(gazeUriText)
+                surfaceHandler.init(uri, gazeUri,liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
                 surfaceHandler.debug = binding.cbDebug.isChecked
                 surfaceHandler.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked)
             }
