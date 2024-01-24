@@ -1,5 +1,6 @@
 package com.alexvas.rtsp.widget
 
+import android.graphics.Bitmap
 import android.media.MediaFormat
 import android.net.Uri
 import android.os.Handler
@@ -43,6 +44,8 @@ open class RtspVideoHandler {
     private var audioChannelCount: Int = 0
     private var audioCodecConfig: ByteArray? = null
     private var firstFrameRendered = false
+    private val receivedBitmaps : Array<Bitmap?> = Array(2) { null }
+    private val parsingFirstBitmap: AtomicBoolean = AtomicBoolean(false)
 
     var rtspFrameListener : RTSPClientListener? = null;
 
@@ -256,14 +259,19 @@ open class RtspVideoHandler {
         this.userAgent = userAgent
     }
 
-    fun start(requestVideo: Boolean, requestAudio: Boolean) {
+    fun start(requestVideo: Boolean, requestAudio: Boolean, parseThread: Thread?) {
         if (DEBUG) Log.v(TAG, "start(requestVideo=$requestVideo, requestAudio=$requestAudio)")
         if (rtspThread != null) rtspThread?.stopAsync()
         this.requestVideo = requestVideo
         this.requestAudio = requestAudio
+
         rtspThread = RtspThread()
         rtspThread!!.name = "RTSP IO thread [${getUriName()}]"
         rtspThread!!.start()
+
+        parseThread?.let{
+            parseThread.start()
+        }
 
         gazeRtspThread = GazeRtspThread()
         gazeRtspThread!!.name = "Gaze RTSP IO thread [${getUriName()}]"
@@ -381,6 +389,8 @@ open class RtspVideoHandler {
                 name = "RTSP video thread [${getUriName()}]"
                 start()
             }
+
+
         }
         if (audioMimeType.isNotEmpty() /*&& checkAudio!!.isChecked*/) {
             Log.i(TAG, "Starting audio decoder with mime type \"$audioMimeType\"")

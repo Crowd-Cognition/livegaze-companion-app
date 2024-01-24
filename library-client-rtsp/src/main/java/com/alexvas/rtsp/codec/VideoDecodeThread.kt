@@ -366,7 +366,7 @@ class VideoDecodeThread (
 
     companion object {
         private val TAG: String = VideoDecodeThread::class.java.simpleName
-        private const val DEBUG = true
+        private const val DEBUG = false
 
         private val DEQUEUE_INPUT_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(500)
         private val DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(100)
