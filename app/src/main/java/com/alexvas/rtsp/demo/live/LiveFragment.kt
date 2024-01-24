@@ -21,6 +21,7 @@ import org.opencv.aruco.Aruco
 import org.opencv.aruco.Dictionary
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import kotlin.text.StringBuilder
 
 @SuppressLint("LogNotTimber")
 class LiveFragment : Fragment() {
@@ -66,7 +67,7 @@ class LiveFragment : Fragment() {
                 bnStartStop.text = "Start RTSP"
                 pbLoading.visibility = View.GONE
                 vShutter.visibility = View.VISIBLE
-                bnSnapshot.isEnabled = false
+//                bnSnapshot.isEnabled = false
                 cbVideo.isEnabled = true
                 cbAudio.isEnabled = true
                 cbDebug.isEnabled = true
@@ -98,7 +99,7 @@ class LiveFragment : Fragment() {
         override fun onRtspFirstFrameRendered() {
             binding.apply {
                 vShutter.visibility = View.GONE
-                bnSnapshot.isEnabled = true
+//                bnSnapshot.isEnabled = true
             }
         }
     }
@@ -201,20 +202,39 @@ class LiveFragment : Fragment() {
         private const val DEBUG = true
     }
 
+    private fun getMatValues(markerList : MutableList<Mat>) : String {
+        val builder = StringBuilder();
+        for (marker in markerList) {
+            builder.append("iii["+ marker.get(0,0).size + ",," + marker.get(0, 0)[0] + ", " + marker.get(0,0)[1] + "] ["
+                    + marker.get(0, 1)[0] + ", " +marker.get(0,1)[1] + "] [" +
+                    + marker.get(0, 2)[0] + ", " + marker.get(0,2)[1] + "] [" +
+                    + marker.get(0,3)[0] + ", " + marker.get(0,3)[1] + "]")
+        }
+        return builder.toString()
+    }
+
     private val rtspFrameListener = object : RTSPClientListener {
         override fun onRTSPFrameReceived(width: Int, height: Int, yuv420Bytes: ByteArray?) {
             if (yuv420Bytes == null || yuv420Bytes.size < 10) return;
             val bitmap = Toolkit.yuvToRgbBitmap(yuv420Bytes, width, height, YuvFormat.YUV_420_888)
-            val img = Mat()
-            Utils.bitmapToMat(bitmap, img)
+//            val img = Mat()
+//            Utils.bitmapToMat(bitmap, img)
             val imgGray = Mat()
             Utils.bitmapToMat(bitmap, imgGray)
-            Imgproc.cvtColor(img, img, Imgproc.COLOR_RGBA2RGB)
+//            Imgproc.cvtColor(img, img, Imgproc.COLOR_RGBA2RGB)
             Imgproc.cvtColor(imgGray, imgGray, Imgproc.COLOR_RGB2GRAY)
-            var markerList = mutableListOf<Mat>()
-            var ids = Mat()
+            val markerList = mutableListOf<Mat>()
+            val ids = Mat()
             Aruco.detectMarkers(imgGray, arucoDictionary,markerList, ids)
-            Log.d("RTSP Listener", "Image Received ${ids.size()}")
+
+            binding.apply {
+//                arucoStats.text = "${ids.size()} \n ${getMatValues(markerList)}"
+                arucoStats.text = "hehehe"
+                vImage.setImageBitmap(bitmap)
+                vShutter.visibility = View.INVISIBLE
+            }
+//            Log.d("RTSP Listener", "Image Received ${ids.size()} ${getMatValues(markerList)}")
+//            Log.d("RTSP Listener", "Image Received ${ids.size()}")
         }
     }
 

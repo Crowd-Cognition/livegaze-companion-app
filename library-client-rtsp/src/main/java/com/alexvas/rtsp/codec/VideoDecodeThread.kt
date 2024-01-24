@@ -244,6 +244,7 @@ class VideoDecodeThread (
                                     val widthHeight = getWidthHeight(decoder.outputFormat)
                                     newWidth = widthHeight.first
                                     newHeight = widthHeight.second
+                                    Log.i("output format changed","$newWidth , $newHeight");
                                     val rotation = if (decoder.outputFormat.containsKey(MediaFormat.KEY_ROTATION)) {
                                         decoder.outputFormat.getInteger(MediaFormat.KEY_ROTATION)
                                     } else {
@@ -352,10 +353,9 @@ class VideoDecodeThread (
     private fun decodeYuv(decoder: MediaCodec, info: MediaCodec.BufferInfo, index: Int) {
         try {
             val buffer = decoder.getOutputBuffer(index)
-            if (DEBUG)Log.d("YUV RECORDER", "${info.size} ${info.offset}")
             val yuv420ByteArray = ByteArray(buffer!!.remaining())
             buffer.get(yuv420ByteArray)
-            clientListener?.onRTSPFrameReceived(1088, 1072,
+            clientListener?.onRTSPFrameReceived(newWidth, newHeight,
                 yuv420ByteArray
             )
 

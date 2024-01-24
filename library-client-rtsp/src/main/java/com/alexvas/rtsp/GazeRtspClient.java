@@ -570,6 +570,12 @@ public class GazeRtspClient {
                 keepAliveListener.onRtspKeepAliveRequested();
             }
 
+            try {
+                Thread.sleep(41);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
 //            Log.i("readData", "$data.length data" + data.length);
             if (data.length == 9) {
                 float x = ByteBuffer.wrap(Arrays.copyOfRange(data, 0, 4)).order(ByteOrder.BIG_ENDIAN).getFloat();

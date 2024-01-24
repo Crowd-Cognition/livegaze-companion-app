@@ -128,6 +128,12 @@
                 android:layout_height="match_parent"
                 android:background="@android:color/black"
                 android:id="@+id/vShutter" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/black"
+                android:id="@+id/vImage"
+                android:contentDescription="kk" />
             <ProgressBar
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -142,19 +148,26 @@
             android:padding="5dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            <Button
-                android:layout_width="wrap_content"
+<!--            <Button-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                style="@style/Widget.Material3.Button.TextButton.Icon"-->
+<!--                android:id="@+id/bnSnapshot"-->
+<!--                android:enabled="false"-->
+<!--                android:text="Photo"-->
+<!--                app:icon="@drawable/ic_camera_black_24dp"/>-->
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.Button.TextButton.Icon"
-                android:id="@+id/bnSnapshot"
-                android:enabled="false"
-                android:text="Photo"
-                app:icon="@drawable/ic_camera_black_24dp"/>
+                android:id="@+id/arucoStats"
+                android:gravity="end"/>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/tvStatus"
                 android:gravity="end"/>
+
         </LinearLayout>
 
     </LinearLayout>

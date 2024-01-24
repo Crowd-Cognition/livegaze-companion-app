@@ -313,10 +313,6 @@ open class RtspVideoHandler {
                     .build()
                 rtspClient.execute()
 
-                val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
-                    .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
-                gazeRtspClient.execute()
-
                 NetUtils.closeSocket(socket)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -349,7 +345,7 @@ open class RtspVideoHandler {
                 // Blocking call until stopped variable is true or connection failed
                 val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
                     .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
-                gazeRtspClient.execute()
+//                gazeRtspClient.execute()
 
                 NetUtils.closeSocket(socket)
             } catch (e: Exception) {
