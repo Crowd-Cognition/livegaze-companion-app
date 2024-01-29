@@ -1,4 +1,4 @@
-package com.alexvas.rtsp.demo.live
+package com.crowdcognition.livegaze.androidClient
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
@@ -11,18 +11,16 @@ import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.alexvas.rtsp.GazeDataListener
 import com.alexvas.rtsp.RTSPClientListener
-import com.alexvas.rtsp.demo.ImageParseListener
 import com.google.android.renderscript.Toolkit
 import com.google.android.renderscript.YuvFormat
 import com.alexvas.rtsp.demo.databinding.FragmentLiveBinding
 import com.alexvas.rtsp.widget.RtspVideoHandler
 import org.opencv.android.OpenCVLoader
-import org.opencv.android.Utils
 import org.opencv.aruco.Aruco
 import org.opencv.aruco.Dictionary
 import org.opencv.core.Mat
-import org.opencv.imgproc.Imgproc
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.text.StringBuilder
 
@@ -34,7 +32,7 @@ class LiveFragment : Fragment() {
     private var arucoDictionary : Dictionary? = null
     private var surfaceHandler : RtspVideoHandler? = null;
     var receivedBitmap : Bitmap? = null
-    private val parsingBitmapIndex: AtomicInteger = AtomicInteger(-1);
+    var gazePos: DoubleArray = doubleArrayOf(0.0,0.0)
 
     private val rtspStatusListener = object: RtspVideoHandler.RtspStatusListener {
         override fun onRtspStatusConnecting() {
@@ -121,6 +119,7 @@ class LiveFragment : Fragment() {
         var surfaceHandler = RtspVideoHandler();
         surfaceHandler.rtspFrameListener = rtspFrameListener;
         surfaceHandler.setStatusListener(rtspStatusListener)
+        surfaceHandler.gazeDataListener = gazeDataListener;
         binding.etRtspRequest.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
             }
@@ -183,7 +182,7 @@ class LiveFragment : Fragment() {
                 val gazeUri = Uri.parse(gazeUriText)
                 surfaceHandler.init(uri, gazeUri,liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
                 surfaceHandler.debug = binding.cbDebug.isChecked
-                val resultParseThread = ResultParseThread(this,parsingBitmapIndex, imageParseListener)
+                val resultParseThread = ResultParseThread(this, imageParseListener)
                 surfaceHandler.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked, resultParseThread)
             }
         }
@@ -225,7 +224,6 @@ class LiveFragment : Fragment() {
                 binding.apply {
 //                arucoStats.text = "${ids.size()} \n ${getMatValues(markerList)}"
                     arucoStats.text = "hehehe"
-                    Log.i("Binding","$bitmap.height ${bitmap.width}")
                     vImage.setImageBitmap(bitmap)
                     vShutter.visibility = View.INVISIBLE
                 }
@@ -234,11 +232,16 @@ class LiveFragment : Fragment() {
 
     }
 
+    private val gazeDataListener = object : GazeDataListener {
+        override fun onGazeDataReady(gazeData: DoubleArray) {
+            gazePos = gazeData;
+        }
+    }
+
     private val rtspFrameListener = object : RTSPClientListener {
         override fun onRTSPFrameReceived(width: Int, height: Int, yuv420Bytes: ByteArray?) {
             if (yuv420Bytes == null || yuv420Bytes.size < 10) return;
             val bitmap = Toolkit.yuvToRgbBitmap(yuv420Bytes, width, height, YuvFormat.YUV_420_888)
-            Log.d("RTSP ListenerFrame", "${bitmap.height} ${bitmap.width}")
             if (receivedBitmap == null) {
                 receivedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
             } else {

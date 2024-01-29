@@ -159,47 +159,6 @@ public class GazeRtspClient {
         void onRtspKeepAliveRequested();
     }
 
-    public static class SdpInfo {
-        /**
-         * Session name (RFC 2327). In most cases RTSP server name.
-         */
-        public @Nullable String sessionName;
-
-        /**
-         * Session description (RFC 2327).
-         */
-        public @Nullable String sessionDescription;
-
-        public @Nullable AudioTrack audioTrack;
-    }
-
-    public abstract static class Track {
-        public String request;
-        public int payloadType;
-    }
-
-
-    public static final int AUDIO_CODEC_UNKNOWN = -1;
-    public static final int AUDIO_CODEC_AAC = 0;
-    public static final int AUDIO_CODEC_OPUS = 1;
-
-    @NonNull
-    private static String getAudioCodecName(int codec) {
-        return switch (codec) {
-            case AUDIO_CODEC_AAC -> "AAC";
-            case AUDIO_CODEC_OPUS -> "Opus";
-            default -> "Unknown";
-        };
-    }
-
-    public static class AudioTrack extends Track {
-        public int audioCodec = AUDIO_CODEC_UNKNOWN;
-        public int sampleRateHz; // 16000, 8000
-        public int channels; // 1 - mono, 2 - stereo
-        public String mode; // AAC-lbr, AAC-hbr
-        public @Nullable byte[] config; // config=1210fff15081ffdffc
-    }
-
     private static final String CRLF = "\r\n";
 
     // Size of buffer for reading from the connection
@@ -219,14 +178,12 @@ public class GazeRtspClient {
     private final @NonNull String uriRtsp;
     private final @NonNull AtomicBoolean exitFlag;
     private final @NonNull GazeRtspClientListener listener;
-
-    //  private boolean sendOptionsCommand;
-    private final boolean requestVideo;
-    private final boolean requestAudio;
     private final boolean debug;
     private final @Nullable String username;
     private final @Nullable String password;
     private final @Nullable String userAgent;
+
+    private GazeDataListener gazedataListener;
 
     private GazeRtspClient(@NonNull GazeRtspClient.Builder builder) {
         rtspSocket = builder.rtspSocket;
@@ -234,8 +191,6 @@ public class GazeRtspClient {
         exitFlag = builder.exitFlag;
         listener = builder.listener;
 //      sendOptionsCommand = builder.sendOptionsCommand;
-        requestVideo = builder.requestVideo;
-        requestAudio = builder.requestAudio;
         username = builder.username;
         password = builder.password;
         debug = builder.debug;
@@ -489,7 +444,7 @@ public class GazeRtspClient {
                     readRtpData(
                             inputStream,
                             exitFlag,
-                            listener,
+                            listener, gazedataListener,
                             sessionTimeout / 2 * 1000,
                             keepAliveListener);
                 } finally {
@@ -544,7 +499,7 @@ public class GazeRtspClient {
     private static void readRtpData(
             @NonNull InputStream inputStream,
             @NonNull AtomicBoolean exitFlag,
-            @NonNull GazeRtspClientListener listener,
+            @NonNull GazeRtspClientListener listener, @NonNull GazeDataListener dataListener,
             int keepAliveTimeout,
             @NonNull RtspClientKeepAliveListener keepAliveListener)
             throws IOException {
@@ -582,6 +537,7 @@ public class GazeRtspClient {
                 float y = ByteBuffer.wrap(Arrays.copyOfRange(data, 4, 8)).order(ByteOrder.BIG_ENDIAN).getFloat();
                 //byte value is 255 (which is -1 in signed form)
                 boolean isWeared = data[8] == -1;
+                dataListener.onGazeDataReady(new double[]{x, y});
                 Log.i("readData", x + " " + y + " " + isWeared + " " + data[8]);
             }
         }

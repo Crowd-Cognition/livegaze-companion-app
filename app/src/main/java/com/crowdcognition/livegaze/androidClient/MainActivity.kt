@@ -1,10 +1,11 @@
-package com.alexvas.rtsp.demo
+package com.crowdcognition.livegaze.androidClient
 
 import android.os.Bundle
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
+import com.alexvas.rtsp.demo.R
 
 class MainActivity : AppCompatActivity() {
 

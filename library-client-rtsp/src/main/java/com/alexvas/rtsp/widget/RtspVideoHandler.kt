@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.SurfaceHolder
+import com.alexvas.rtsp.GazeDataListener
 import com.alexvas.rtsp.GazeRtspClient
 import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.rtsp.RtspClient
@@ -44,10 +45,9 @@ open class RtspVideoHandler {
     private var audioChannelCount: Int = 0
     private var audioCodecConfig: ByteArray? = null
     private var firstFrameRendered = false
-    private val receivedBitmaps : Array<Bitmap?> = Array(2) { null }
-    private val parsingFirstBitmap: AtomicBoolean = AtomicBoolean(false)
 
     var rtspFrameListener : RTSPClientListener? = null;
+    var gazeDataListener : GazeDataListener? = null;
 
     /**
      * Show more debug info on console on runtime.
@@ -353,7 +353,8 @@ open class RtspVideoHandler {
                 // Blocking call until stopped variable is true or connection failed
                 val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
                     .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
-//                gazeRtspClient.execute()
+                gazeRtspClient.execute()
+                //TODO: add listener to get resultData
 
                 NetUtils.closeSocket(socket)
             } catch (e: Exception) {

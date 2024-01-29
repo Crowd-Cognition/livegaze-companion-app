@@ -1,4 +1,4 @@
-package com.alexvas.rtsp.demo
+package com.crowdcognition.livegaze.androidClient
 
 import android.graphics.Bitmap
 
