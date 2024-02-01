@@ -58,4 +58,7 @@ dependencies {
     api "com.github.AppDevNext.Logcat:LogcatCoreUI:2.12"
     implementation project(':library-client-rtsp')
     implementation project(':renderscript-toolkit')
+    implementation ('io.socket:socket.io-client:2.0.0') {
+        exclude group: 'org.json', module: 'json'
+    }
 }

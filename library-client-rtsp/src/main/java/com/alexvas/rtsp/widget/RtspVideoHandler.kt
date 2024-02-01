@@ -351,7 +351,7 @@ open class RtspVideoHandler {
                     NetUtils.createSocketAndConnect(gazeUri!!.host.toString(), port, 5000)
 
                 // Blocking call until stopped variable is true or connection failed
-                val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener)
+                val gazeRtspClient = GazeRtspClient.Builder(socket, gazeUri.toString(), rtspStopped, gazeClientListener, gazeDataListener!!)
                     .withDebug(debug).withUserAgent(userAgent).withCredentials(username, password).build()
                 gazeRtspClient.execute()
                 //TODO: add listener to get resultData

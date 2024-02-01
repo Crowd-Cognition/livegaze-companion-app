@@ -183,7 +183,7 @@ public class GazeRtspClient {
     private final @Nullable String password;
     private final @Nullable String userAgent;
 
-    private GazeDataListener gazedataListener;
+    private final @NonNull GazeDataListener gazedataListener;
 
     private GazeRtspClient(@NonNull GazeRtspClient.Builder builder) {
         rtspSocket = builder.rtspSocket;
@@ -191,6 +191,7 @@ public class GazeRtspClient {
         exitFlag = builder.exitFlag;
         listener = builder.listener;
 //      sendOptionsCommand = builder.sendOptionsCommand;
+        gazedataListener = builder.dataListener;
         username = builder.username;
         password = builder.password;
         debug = builder.debug;
@@ -537,7 +538,7 @@ public class GazeRtspClient {
                 float y = ByteBuffer.wrap(Arrays.copyOfRange(data, 4, 8)).order(ByteOrder.BIG_ENDIAN).getFloat();
                 //byte value is 255 (which is -1 in signed form)
                 boolean isWeared = data[8] == -1;
-                dataListener.onGazeDataReady(new double[]{x, y});
+                dataListener.onGazeDataReady(new float[]{x, y});
                 Log.i("readData", x + " " + y + " " + isWeared + " " + data[8]);
             }
         }
@@ -1103,9 +1104,9 @@ public class GazeRtspClient {
         private final @NonNull String uriRtsp;
         private final @NonNull AtomicBoolean exitFlag;
         private final @NonNull GazeRtspClientListener listener;
+
+        private final @NonNull GazeDataListener dataListener;
         //      private boolean sendOptionsCommand = true;
-        private boolean requestVideo = true;
-        private boolean requestAudio = true;
         private boolean debug = false;
         private @Nullable String username = null;
         private @Nullable String password = null;
@@ -1115,11 +1116,13 @@ public class GazeRtspClient {
                 @NonNull Socket rtspSocket,
                 @NonNull String uriRtsp,
                 @NonNull AtomicBoolean exitFlag,
-                @NonNull GazeRtspClientListener listener) {
+                @NonNull GazeRtspClientListener listener,
+                @NonNull GazeDataListener dataListener) {
             this.rtspSocket = rtspSocket;
             this.uriRtsp = uriRtsp;
             this.exitFlag = exitFlag;
             this.listener = listener;
+            this.dataListener = dataListener;
         }
 
         @NonNull
@@ -1147,17 +1150,7 @@ public class GazeRtspClient {
 //            return this;
 //        }
 
-        @NonNull
-        public Builder requestVideo(boolean requestVideo) {
-            this.requestVideo = requestVideo;
-            return this;
-        }
 
-        @NonNull
-        public Builder requestAudio(boolean requestAudio) {
-            this.requestAudio = requestAudio;
-            return this;
-        }
 
         @NonNull
         public GazeRtspClient build() {

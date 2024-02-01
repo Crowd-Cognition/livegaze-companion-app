@@ -6,10 +6,13 @@ import android.util.Log
 import com.alexvas.rtsp.codec.VideoDecodeThread
 import com.crowdcognition.livegaze.androidClient.aruco.ArucoTag
 import com.crowdcognition.livegaze.androidClient.aruco.Plane
+import okhttp3.internal.Util
 import org.opencv.android.Utils
 import org.opencv.aruco.Aruco
 import org.opencv.aruco.Dictionary
 import org.opencv.core.Mat
+import org.opencv.core.Point
+import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -60,6 +63,9 @@ class ResultParseThread(private var frag: LiveFragment, private var imageParseLi
             val imgGray = Mat()
             Utils.bitmapToMat(selectedBitmap, imgGray)
 
+            val img = Mat()
+            Utils.bitmapToMat(selectedBitmap, img)
+
             Imgproc.cvtColor(imgGray, imgGray, Imgproc.COLOR_RGB2GRAY)
 
 //            val img = Mat()
@@ -79,8 +85,14 @@ class ResultParseThread(private var frag: LiveFragment, private var imageParseLi
                     arucoTags.add(ArucoTag(corners, ids.get(i,0)[0].toInt()))
                 }
                 val plane = Plane(arucoTags)
-                plane.getPosInPlane(frag.gazePos)
+                var values = plane.getPosInPlane(frag.gazePos)
+                frag.socketIOManager.sendData(arucoTags.map{it.id}.toTypedArray(), values[0], values[1], "aaa")
+                for((i, tag) in plane.tags.withIndex()) {
+                    Imgproc.circle(img, Point(tag.center[0], tag.center[1]), 10, Scalar(0.0,255.0,255.0))
+                    Imgproc.putText(img, "$i",Point(tag.center[0], tag.center[1]), Imgproc.FONT_HERSHEY_TRIPLEX, 10.0, Scalar(0.0,255.0,0.0))
+                }
             }
+            Utils.matToBitmap(img, selectedBitmap)
             Log.d("RTSP Listener", "Image Received ${ids.size()} ${getMatValues(markerList, ids)}")
             imageParseListener.onObjectParseReady(selectedBitmap!!);
 

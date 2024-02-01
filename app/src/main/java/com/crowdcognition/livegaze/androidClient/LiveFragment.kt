@@ -17,6 +17,7 @@ import com.google.android.renderscript.Toolkit
 import com.google.android.renderscript.YuvFormat
 import com.alexvas.rtsp.demo.databinding.FragmentLiveBinding
 import com.alexvas.rtsp.widget.RtspVideoHandler
+import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
 import org.opencv.android.OpenCVLoader
 import org.opencv.aruco.Aruco
 import org.opencv.aruco.Dictionary
@@ -31,8 +32,9 @@ class LiveFragment : Fragment() {
     private lateinit var liveViewModel: LiveViewModel
     private var arucoDictionary : Dictionary? = null
     private var surfaceHandler : RtspVideoHandler? = null;
+    var socketIOManager: SocketManager = SocketManager("http://10.181.215.226:5000")
     var receivedBitmap : Bitmap? = null
-    var gazePos: DoubleArray = doubleArrayOf(0.0,0.0)
+    var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
 
     private val rtspStatusListener = object: RtspVideoHandler.RtspStatusListener {
         override fun onRtspStatusConnecting() {
@@ -120,6 +122,7 @@ class LiveFragment : Fragment() {
         surfaceHandler.rtspFrameListener = rtspFrameListener;
         surfaceHandler.setStatusListener(rtspStatusListener)
         surfaceHandler.gazeDataListener = gazeDataListener;
+        socketIOManager.connect()
         binding.etRtspRequest.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
             }
@@ -233,7 +236,7 @@ class LiveFragment : Fragment() {
     }
 
     private val gazeDataListener = object : GazeDataListener {
-        override fun onGazeDataReady(gazeData: DoubleArray) {
+        override fun onGazeDataReady(gazeData: FloatArray) {
             gazePos = gazeData;
         }
     }
