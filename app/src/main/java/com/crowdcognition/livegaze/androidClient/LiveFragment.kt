@@ -118,7 +118,7 @@ class LiveFragment : Fragment() {
 
         liveViewModel = ViewModelProvider(this).get(LiveViewModel::class.java)
         binding = FragmentLiveBinding.inflate(inflater, container, false)
-        var surfaceHandler = RtspVideoHandler();
+        val surfaceHandler = RtspVideoHandler();
         surfaceHandler.rtspFrameListener = rtspFrameListener;
         surfaceHandler.setStatusListener(rtspStatusListener)
         surfaceHandler.gazeDataListener = gazeDataListener;
@@ -185,8 +185,8 @@ class LiveFragment : Fragment() {
                 val gazeUri = Uri.parse(gazeUriText)
                 surfaceHandler.init(uri, gazeUri,liveViewModel.rtspUsername.value, liveViewModel.rtspPassword.value, "rtsp-client-android")
                 surfaceHandler.debug = binding.cbDebug.isChecked
-                val resultParseThread = ResultParseThread(this, imageParseListener)
-                surfaceHandler.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked, resultParseThread)
+//                val resultParseThread = ResultParseThread(this, imageParseListener)
+//                surfaceHandler.start(binding.cbVideo.isChecked, binding.cbAudio.isChecked, resultParseThread)
             }
         }
         return binding.root

@@ -6,6 +6,7 @@ import android.util.Log
 import com.alexvas.rtsp.codec.VideoDecodeThread
 import com.crowdcognition.livegaze.androidClient.aruco.ArucoTag
 import com.crowdcognition.livegaze.androidClient.aruco.Plane
+import com.crowdcognition.livegaze.androidClient.services.MainService
 import okhttp3.internal.Util
 import org.opencv.android.Utils
 import org.opencv.aruco.Aruco
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class ResultParseThread(private var frag: LiveFragment, private var imageParseListener: ImageParseListener) : Thread() {
+class ResultParseThread(private var frag: MainService, private var imageParseListener: ImageParseListener) : Thread() {
 
     private var exitFlag = AtomicBoolean(false)
     private var arucoDictionary : Dictionary? = null
