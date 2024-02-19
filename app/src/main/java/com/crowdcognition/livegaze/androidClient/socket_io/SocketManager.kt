@@ -22,26 +22,23 @@ class SocketManager(uri: String) {
     }
 
     fun connect() {
-//        socket!!.connect();
+        socket!!.connect();
     }
 
     fun sendData(arucoTagIds: Array<Int>, positionX: Float, positionY: Float, cameraId: String) {
         val dataJson = JSONObject();
-        val arucoTagIdsArray = JSONArray();
-        for (arucoTag in arucoTagIds) {
-            arucoTagIdsArray.put(arucoTag);
-        }
+
         try {
             dataJson.put("x",positionX);
             dataJson.put("y",positionY);
-            dataJson.put("cameraId", cameraId);
-            dataJson.put("tagIds", arucoTagIdsArray);
+            dataJson.put("camera_id", cameraId);
+            dataJson.put("stim_id", arucoTagIds[1]);
         } catch (e: JSONException) {
             e.printStackTrace()
         }
         Log.i("data", dataJson.toString())
 
-//        socket?.emit("newCameraData", dataJson);
+        socket!!.emit("new_gaze_data", dataJson);
     }
 
 

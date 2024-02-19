@@ -1,36 +1,53 @@
 package com.crowdcognition.livegaze.androidClient.services
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import android.view.View
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModelProvider
 import com.alexvas.rtsp.GazeDataListener
 import com.alexvas.rtsp.RTSPClientListener
-import com.alexvas.rtsp.demo.databinding.FragmentLiveBinding
+import com.alexvas.rtsp.demo.R
 import com.alexvas.rtsp.widget.RtspVideoHandler
 import com.crowdcognition.livegaze.androidClient.ImageParseListener
-import com.crowdcognition.livegaze.androidClient.LiveViewModel
+import com.crowdcognition.livegaze.androidClient.MainActivity
 import com.crowdcognition.livegaze.androidClient.ResultParseThread
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
 import com.google.android.renderscript.Toolkit
 import com.google.android.renderscript.YuvFormat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okio.IOException
+import org.json.JSONObject
+import org.opencv.android.OpenCVLoader
 
-private const val DEFAULT_RTSP_REQUEST = "rtsp://10.181.124.222:8086/?camera=world"
+
+private const val CLIENT_IP = "10.181.112.159"
+private const val DEFAULT_RTSP_REQUEST = "rtsp://${CLIENT_IP}:8086/?camera=world"
+private const val DEFAULT_HTTP_REQUEST = "http://${CLIENT_IP}:8080/api/status"
 
 class MainService : Service() {
 
     private var serviceJob: Job? = null
-    var socketIOManager: SocketManager = SocketManager("http://10.181.215.226:5000")
+    var socketIOManager: SocketManager = SocketManager("http://10.181.196.163:5000")
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
+    var companionId: String = ""
 
     val rtspRequest = MutableLiveData<String>().apply {
         value = DEFAULT_RTSP_REQUEST
@@ -38,6 +55,8 @@ class MainService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        var notification = createNotification()
+        startForeground(1, notification)
         Log.d(TAG, "Service created")
     }
 
@@ -49,11 +68,75 @@ class MainService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-//        binding = FragmentLiveBinding.inflate(inflater, container, false)
+        Log.i("MainService", "start")
+
+        socketIOManager.connect()
+
+        if (intent != null) {
+            val action = intent.action
+//            log.i("useAction","using an intent with action $action")
+            when (action) {
+                "START" -> startService()
+                "STOP" -> stopService()
+            }
+        } else {
+            Log.i("ee",
+                "with a null intent. It has been probably restarted by the system."
+            )
+        }
+        // by returning this we make sure the service is restarted if the system kills the service
+
+
+        
+        return START_STICKY
+    }
+
+    private fun startService() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
+            receivedResponse(httpResponse!!)
+        }
+    }
+
+    private suspend fun makeHttpRequest(url: String): Response? {
+        val client = OkHttpClient()
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        return try {
+            client.newCall(request).execute()
+        } catch (e: IOException) {
+            Log.e(TAG, "Error making HTTP request: ${e.message}")
+            null
+        }
+    }
+
+    private fun receivedResponse(response: Response) {
+
+
+//        Log.i("re", response.message)
+//        Log.i("re", response.body?.string()!!)
+        val jsonString = response.body?.string()!!
+        val responseJson = JSONObject(jsonString)
+        val resultArray = responseJson.getJSONArray("result")
+        val companionResult = resultArray.getJSONObject(resultArray.length() - 2)
+        companionId = companionResult.getJSONObject("data").getString("device_id")
+
+        /*
+            {"message":"Success","result":[{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dimu","port":8686,"protocol":"rtsp","sensor":"imu"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dimu","port":8086,"protocol":"rtsp","sensor":"imu"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dworld","port":8686,"protocol":"rtsp","sensor":"world"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dworld","port":8086,"protocol":"rtsp","sensor":"world"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dgaze","port":8686,"protocol":"rtsp","sensor":"gaze"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dgaze","port":8086,"protocol":"rtsp","sensor":"gaze"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003deyes","port":8686,"protocol":"rtsp","sensor":"eyes"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003deyes","port":8086,"protocol":"rtsp","sensor":"eyes"},"model":"Sensor"},{"data":{"battery_level":39,"battery_state":"OK","device_id":"1ee2d98fa1fa0d2f","device_name":"Neon Companion","ip":"10.181.112.159","memory":32512851968,"memory_state":"OK","time_echo_port":12321},"model":"Phone"},{"data":{"frame_name":"Just act natural","glasses_serial":"-1","module_serial":"396621","version":"2.0","world_camera_serial":"-1"},"model":"Hardware"}]}
+         */
+//        val jsonObject = JSONObject(result)
+//        val resultList = jsonObject.getJSONArray("result")
+
+//        Log.i("re", "${resultList.length()}")
+
         val surfaceHandler = RtspVideoHandler();
         surfaceHandler.rtspFrameListener = rtspFrameListener;
         surfaceHandler.setStatusListener(rtspStatusListener)
         surfaceHandler.gazeDataListener = gazeDataListener;
+        if(!OpenCVLoader.initDebug()) {
+        }
 
 //        liveViewModel = ViewModelProvider(this).get(LiveViewModel::class.java)
 
@@ -71,9 +154,66 @@ class MainService : Service() {
             requestAudio = false,
             parseThread = resultParseThread
         )
-        
-        return START_STICKY
     }
+
+    private fun stopService() {
+//        Toast.makeText(this, "Service stopping", Toast.LENGTH_SHORT).show()
+//        try {
+//            wakeLock?.let {
+//                if (it.isHeld) {
+//                    it.release()
+//                }
+//            }
+//            stopForeground(true)
+//            stopSelf()
+//        } catch (e: Exception) {
+//            log("Service stopped without being started: ${e.message}")
+//        }
+//        isServiceStarted = false
+//        setServiceState(this, ServiceState.STOPPED)
+    }
+
+    private fun createNotification(): Notification {
+        val notificationChannelId = "ENDLESS SERVICE CHANNEL"
+
+        // depending on the Android API that we're dealing with we will have
+        // to use a specific method to create the notification
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
+            val channel = NotificationChannel(
+                notificationChannelId,
+                "Endless Service notifications channel",
+                NotificationManager.IMPORTANCE_HIGH
+            ).let {
+                it.description = "Endless Service channel"
+                it.enableLights(true)
+                it.lightColor = Color.RED
+                it.enableVibration(true)
+                it.vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)
+                it
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val pendingIntent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
+            PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        }
+
+        val builder: Notification.Builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(
+            this,
+            notificationChannelId
+        ) else Notification.Builder(this)
+
+        return builder
+            .setContentTitle("Endless Service")
+            .setContentText("This is your favorite endless service working")
+            .setContentIntent(pendingIntent)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setTicker("Ticker text")
+            .setPriority(Notification.PRIORITY_HIGH) // for under android 26 compatibility
+            .build()
+    }
+
 
     override fun onBind(intent: Intent?): IBinder? {
         return null

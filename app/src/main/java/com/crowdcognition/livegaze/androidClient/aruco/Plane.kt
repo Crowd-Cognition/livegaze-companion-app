@@ -42,15 +42,16 @@ class Plane(val tags: ArrayList<ArucoTag>) {
         val outputPts = ArrayList<Point>()
         val stringBuilder = StringBuilder()
         for (tag in tags) {
-            stringBuilder.append(" [${tag.center[0]},${tag.center[1]}]")
+//            stringBuilder.append(" [${tag.center[0]},${tag.center[1]}]")
+            stringBuilder.append(" ${tag.id} " )
             inputPts.add(Point(tag.center[0], tag.center[1]))
         }
         Log.i("tagg", stringBuilder.toString())
 
+        outputPts.add(Point(0.0, 1.0))
+        outputPts.add(Point(1.0, 1.0))
+        outputPts.add(Point(1.0, 0.0))
         outputPts.add(Point(0.0, 0.0))
-        outputPts.add(Point(10.0, 0.0))
-        outputPts.add(Point(10.0, 10.0))
-        outputPts.add(Point(0.0, 10.0))
 
 
         val srcMat = Converters.vector_Point2f_to_Mat(inputPts)
@@ -63,8 +64,8 @@ class Plane(val tags: ArrayList<ArucoTag>) {
         val pointsMat = Converters.vector_Point2f_to_Mat(points)
         val res = Mat()
         Core.perspectiveTransform(pointsMat, res, M)
-        Log.i("MappedPoint", "${res[0,0][0]}  ${res[0,0][1]}  realpoint ${worldPoint.x}  ${worldPoint.y}")
-        return floatArrayOf(0.0f,0.0f)
+//        Log.i("MappedPoint", "${res[0,0][0]}  ${res[0,0][1]}  realpoint ${worldPoint.x}  ${worldPoint.y}")
+        return floatArrayOf(res[0,0][0].toFloat(),res[0,0][1].toFloat())
     }
 
     companion object {
