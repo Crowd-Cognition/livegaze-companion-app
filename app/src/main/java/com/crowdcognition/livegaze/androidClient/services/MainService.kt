@@ -8,9 +8,11 @@ import android.app.Service
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -37,26 +39,38 @@ import org.json.JSONObject
 import org.opencv.android.OpenCVLoader
 
 
-private const val CLIENT_IP = "10.181.112.159"
+private const val CLIENT_IP = "10.181.114.108"
 private const val DEFAULT_RTSP_REQUEST = "rtsp://${CLIENT_IP}:8086/?camera=world"
 private const val DEFAULT_HTTP_REQUEST = "http://${CLIENT_IP}:8080/api/status"
 
 class MainService : Service() {
 
+    private val binder = LocalBinder()
     private var serviceJob: Job? = null
-    var socketIOManager: SocketManager = SocketManager("http://10.181.196.163:5000")
+    var socketIOManager: SocketManager = SocketManager("http://10.181.216.185:5000")
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
     var companionId: String = ""
-
-    val rtspRequest = MutableLiveData<String>().apply {
+    private var surfaceHandler: RtspVideoHandler? = null
+    private var resultParseThread : ResultParseThread? = null
+    private val rtspRequest = MutableLiveData<String>().apply {
         value = DEFAULT_RTSP_REQUEST
+    }
+
+    inner class LocalBinder : Binder() {
+        fun getService(): MainService = this@MainService
     }
 
     override fun onCreate() {
         super.onCreate()
-        var notification = createNotification()
-        startForeground(1, notification)
+        val notification = createNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(2, notification, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            } else { 0 })
+        } else {
+            startForeground(1, notification,)
+        }
         Log.d(TAG, "Service created")
     }
 
@@ -118,6 +132,7 @@ class MainService : Service() {
 //        Log.i("re", response.message)
 //        Log.i("re", response.body?.string()!!)
         val jsonString = response.body?.string()!!
+        Log.i("json", jsonString)
         val responseJson = JSONObject(jsonString)
         val resultArray = responseJson.getJSONArray("result")
         val companionResult = resultArray.getJSONObject(resultArray.length() - 2)
@@ -131,10 +146,10 @@ class MainService : Service() {
 
 //        Log.i("re", "${resultList.length()}")
 
-        val surfaceHandler = RtspVideoHandler();
-        surfaceHandler.rtspFrameListener = rtspFrameListener;
-        surfaceHandler.setStatusListener(rtspStatusListener)
-        surfaceHandler.gazeDataListener = gazeDataListener;
+        surfaceHandler = RtspVideoHandler();
+        surfaceHandler?.rtspFrameListener = rtspFrameListener;
+        surfaceHandler?.setStatusListener(rtspStatusListener)
+        surfaceHandler?.gazeDataListener = gazeDataListener;
         if(!OpenCVLoader.initDebug()) {
         }
 
@@ -146,29 +161,27 @@ class MainService : Service() {
         val gazeUriText = uriParts.joinToString(separator = "?")
         Log.i("GazeURI",gazeUriText)
         val gazeUri = Uri.parse(gazeUriText)
-        surfaceHandler.init(uri, gazeUri,"","", "rtsp-client-android")
-        surfaceHandler.debug = true
-        val resultParseThread = ResultParseThread(this, imageParseListener)
-        surfaceHandler.start(
+        surfaceHandler?.init(uri, gazeUri,"","", "rtsp-client-android")
+        surfaceHandler?.debug = true
+        resultParseThread = ResultParseThread(this, imageParseListener)
+        surfaceHandler?.start(
             requestVideo = true,
             requestAudio = false,
             parseThread = resultParseThread
         )
     }
 
-    private fun stopService() {
+    fun stopService() {
 //        Toast.makeText(this, "Service stopping", Toast.LENGTH_SHORT).show()
-//        try {
-//            wakeLock?.let {
-//                if (it.isHeld) {
-//                    it.release()
-//                }
-//            }
-//            stopForeground(true)
-//            stopSelf()
-//        } catch (e: Exception) {
-//            log("Service stopped without being started: ${e.message}")
-//        }
+        try {
+            Log.i("MainService", "stopped")
+            resultParseThread?.stopAsync()
+            surfaceHandler?.stop()
+            stopForeground(true)
+            stopSelf()
+        } catch (e: Exception) {
+            Log.i("MainService","Service stopped without being started: ${e.message}")
+        }
 //        isServiceStarted = false
 //        setServiceState(this, ServiceState.STOPPED)
     }
@@ -210,13 +223,13 @@ class MainService : Service() {
             .setContentIntent(pendingIntent)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setTicker("Ticker text")
-            .setPriority(Notification.PRIORITY_HIGH) // for under android 26 compatibility
+//            .setPriority(Notification.PRIORITY_HIGH) // for under android 26 compatibility
             .build()
     }
 
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+    override fun onBind(intent: Intent?): IBinder {
+        return binder
     }
 
     private val rtspStatusListener = object: RtspVideoHandler.RtspStatusListener {

@@ -328,7 +328,7 @@ public class GazeRtspClient {
 // Session: Mzk5MzY2MzUwMTg3NTc2Mzc5NQ;timeout=30
             String session = null;
             int sessionTimeout = 0;
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 1; i++) {
                 // i=0 - video track, i=1 - audio track
                 checkExitFlag(exitFlag);
                 Log.i("Setup", uriRtsp);

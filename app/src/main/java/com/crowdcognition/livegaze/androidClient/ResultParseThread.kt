@@ -49,8 +49,12 @@ class ResultParseThread(private var mainService: MainService, private var imageP
 
         while(!exitFlag.get()) {
             if (mainService.receivedBitmap == null) {
-                Log.d("RTSP Listener", "bitmap null")
-                Thread.sleep(40);
+                if (DEBUG) Log.d("RTSP Listener", "bitmap null")
+                try {
+                    sleep(40);
+                } catch (e: InterruptedException) {
+                    continue
+                }
                 continue;
             }
             var selectedBitmap : Bitmap? = null;
@@ -93,7 +97,7 @@ class ResultParseThread(private var mainService: MainService, private var imageP
                 }
             }
             Utils.matToBitmap(img, selectedBitmap)
-            Log.d("RTSP Listener", "Image Received ${ids.size()}")
+            if (DEBUG)Log.d("RTSP Listener", "Image Received ${ids.size()}")
             imageParseListener.onObjectParseReady(selectedBitmap!!);
 
         }
@@ -102,7 +106,7 @@ class ResultParseThread(private var mainService: MainService, private var imageP
 
     companion object {
         private val TAG: String = VideoDecodeThread::class.java.simpleName
-        private const val DEBUG = true
+        private const val DEBUG = false
 
         private val DEQUEUE_INPUT_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(500)
         private val DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(100)

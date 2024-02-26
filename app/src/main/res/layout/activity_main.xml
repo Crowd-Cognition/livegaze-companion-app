@@ -20,13 +20,19 @@
             android:textSize="15pt"> </TextView>
 
         <Button
-            android:id="@+id/star_button"
+            android:id="@+id/start_button"
             android:layout_width="70pt"
             android:layout_height="40pt"
             android:text="start"
-            android:textSize="15pt">
+            android:textSize="15pt"/>
 
-        </Button>
+        <Button
+            android:id="@+id/stop_button"
+            android:layout_width="70pt"
+            android:layout_height="40pt"
+            android:text="stop"
+            android:textSize="15pt"/>
+
     </LinearLayout>
 
 <!--    <fragment-->

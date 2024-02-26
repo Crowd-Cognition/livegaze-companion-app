@@ -97,7 +97,6 @@ open class RtspVideoHandler {
 
         override fun onRtspFailed(message: String?) {
             if (DEBUG) Log.v(TAG + "Gaze", "rtspFailed()")
-
         }
 
     }
@@ -269,9 +268,7 @@ open class RtspVideoHandler {
         rtspThread!!.name = "RTSP IO thread [${getUriName()}]"
         rtspThread!!.start()
 
-        parseThread?.let{
-            parseThread.start()
-        }
+        parseThread?.start()
 
         gazeRtspThread = GazeRtspThread()
         gazeRtspThread!!.name = "Gaze RTSP IO thread [${getUriName()}]"

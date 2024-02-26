@@ -14,7 +14,6 @@ import kotlin.math.atan2
 class Plane(val tags: ArrayList<ArucoTag>) {
 
     fun getPosInPlane(pos: FloatArray) : FloatArray {
-
         // sorting tags: calculate center, sort by the angle of diff vectors (clockwise?)
         val inputCenter = doubleArrayOf(0.0,0.0)
         for (tag in tags)
@@ -46,7 +45,7 @@ class Plane(val tags: ArrayList<ArucoTag>) {
             stringBuilder.append(" ${tag.id} " )
             inputPts.add(Point(tag.center[0], tag.center[1]))
         }
-        Log.i("tagg", stringBuilder.toString())
+        if (DEBUG) Log.i("tagg", stringBuilder.toString())
 
         outputPts.add(Point(0.0, 1.0))
         outputPts.add(Point(1.0, 1.0))
@@ -58,10 +57,12 @@ class Plane(val tags: ArrayList<ArucoTag>) {
         val dstMat = Converters.vector_Point2f_to_Mat(outputPts)
 
         val M = Imgproc.getPerspectiveTransform(srcMat, dstMat)
+
         val worldPoint = Point(pos[0].toDouble(), pos[1].toDouble())
         val points = ArrayList<Point>()
         points.add(worldPoint)
         val pointsMat = Converters.vector_Point2f_to_Mat(points)
+        if (DEBUG)Log.i("Pos OutPlane", "${pos[0]} ${pos[1]}")
         val res = Mat()
         Core.perspectiveTransform(pointsMat, res, M)
 //        Log.i("MappedPoint", "${res[0,0][0]}  ${res[0,0][1]}  realpoint ${worldPoint.x}  ${worldPoint.y}")
@@ -69,6 +70,7 @@ class Plane(val tags: ArrayList<ArucoTag>) {
     }
 
     companion object {
+        const val DEBUG = true
         const val tangentDegStart = (-135 * PI / 180)
         const val degDiff = 2 * PI
     }
