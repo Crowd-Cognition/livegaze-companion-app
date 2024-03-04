@@ -129,18 +129,18 @@ public class GazeRtspClient {
     static final String TAG_DEBUG = TAG + " DBG";
     private static final boolean DEBUG = false;
 
-    public final static int RTSP_CAPABILITY_NONE          = 0;
-    public final static int RTSP_CAPABILITY_OPTIONS       = 1 << 1;
-    public final static int RTSP_CAPABILITY_DESCRIBE      = 1 << 2;
-    public final static int RTSP_CAPABILITY_ANNOUNCE      = 1 << 3;
-    public final static int RTSP_CAPABILITY_SETUP         = 1 << 4;
-    public final static int RTSP_CAPABILITY_PLAY          = 1 << 5;
-    public final static int RTSP_CAPABILITY_RECORD        = 1 << 6;
-    public final static int RTSP_CAPABILITY_PAUSE         = 1 << 7;
-    public final static int RTSP_CAPABILITY_TEARDOWN      = 1 << 8;
+    public final static int RTSP_CAPABILITY_NONE = 0;
+    public final static int RTSP_CAPABILITY_OPTIONS = 1 << 1;
+    public final static int RTSP_CAPABILITY_DESCRIBE = 1 << 2;
+    public final static int RTSP_CAPABILITY_ANNOUNCE = 1 << 3;
+    public final static int RTSP_CAPABILITY_SETUP = 1 << 4;
+    public final static int RTSP_CAPABILITY_PLAY = 1 << 5;
+    public final static int RTSP_CAPABILITY_RECORD = 1 << 6;
+    public final static int RTSP_CAPABILITY_PAUSE = 1 << 7;
+    public final static int RTSP_CAPABILITY_TEARDOWN = 1 << 8;
     public final static int RTSP_CAPABILITY_SET_PARAMETER = 1 << 9;
     public final static int RTSP_CAPABILITY_GET_PARAMETER = 1 << 10;
-    public final static int RTSP_CAPABILITY_REDIRECT      = 1 << 11;
+    public final static int RTSP_CAPABILITY_REDIRECT = 1 << 11;
 
     public static boolean hasCapability(int capability, int capabilitiesMask) {
         return (capabilitiesMask & capability) != 0;
@@ -148,10 +148,15 @@ public class GazeRtspClient {
 
     public interface GazeRtspClientListener {
         void onRtspConnecting();
+
         void onRtspConnected();
+
         void onRtspDisconnecting();
+
         void onRtspDisconnected();
+
         void onRtspFailedUnauthorized();
+
         void onRtspFailed(@Nullable String message);
     }
 
@@ -347,13 +352,13 @@ public class GazeRtspClient {
                             digestRealmNonce.first,
                             digestRealmNonce.second);
                 sendSetupCommand(
-                            outputStream,
-                            uriRtspSetup,
-                            cSeq.addAndGet(1),
-                            userAgent,
-                            authToken,
-                            session,
-                            (i == 0 ? "0-1" /*video*/ : "2-3" /*audio*/));
+                        outputStream,
+                        uriRtspSetup,
+                        cSeq.addAndGet(1),
+                        userAgent,
+                        authToken,
+                        session,
+                        (i == 0 ? "0-1" /*video*/ : "2-3" /*audio*/));
                 status = readResponseStatusCode(inputStream);
                 if (DEBUG)
                     Log.i(TAG, "SETUP status: " + status);
@@ -514,7 +519,7 @@ public class GazeRtspClient {
                 continue;
 //                throw new IOException("No RTP frames found");
             }
-          header.dumpHeader();
+            header.dumpHeader();
             if (header.payloadSize != data.length)
                 data = new byte[header.payloadSize];
 
@@ -526,11 +531,11 @@ public class GazeRtspClient {
                 keepAliveListener.onRtspKeepAliveRequested();
             }
 
-            try {
-                Thread.sleep(41);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+//                Thread.sleep(41);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
 
 //            Log.i("readData", "$data.length data" + data.length);
             if (data.length == 9) {
@@ -539,7 +544,9 @@ public class GazeRtspClient {
                 //byte value is 255 (which is -1 in signed form)
                 boolean isWeared = data[8] == -1;
                 dataListener.onGazeDataReady(new float[]{x, y});
-                Log.i("readData", x + " " + y + " " + isWeared + " " + data[8]);
+                long tsLong = System.currentTimeMillis() / 1000;
+                String ts = Long.toString(tsLong);
+                Log.i("readData", x + " " + y + " " + isWeared + " " + header.timeStamp + " " + ts + (tsLong - header.timeStamp));
             }
         }
     }
@@ -584,7 +591,8 @@ public class GazeRtspClient {
             @Nullable String session,
             @Nullable String authToken)
             throws IOException {
-        if (DEBUG) Log.v(TAG, "sendGetParameterCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
+        if (DEBUG)
+            Log.v(TAG, "sendGetParameterCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
         sendSimpleCommand("GET_PARAMETER", outputStream, request, cSeq, userAgent, session, authToken);
     }
 
@@ -595,7 +603,8 @@ public class GazeRtspClient {
             @Nullable String userAgent,
             @Nullable String authToken)
             throws IOException {
-        if (DEBUG) Log.v(TAG, "sendDescribeCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
+        if (DEBUG)
+            Log.v(TAG, "sendDescribeCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
         outputStream.write(("DESCRIBE " + request + " RTSP/1.0" + CRLF).getBytes());
         outputStream.write(("Accept: application/sdp" + CRLF).getBytes());
         if (authToken != null)
@@ -615,7 +624,8 @@ public class GazeRtspClient {
             @Nullable String authToken,
             @Nullable String session)
             throws IOException {
-        if (DEBUG) Log.v(TAG, "sendTeardownCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
+        if (DEBUG)
+            Log.v(TAG, "sendTeardownCommand(request=\"" + request + "\", cSeq=" + cSeq + ")");
         outputStream.write(("TEARDOWN " + request + " RTSP/1.0" + CRLF).getBytes());
         if (authToken != null)
             outputStream.write(("Authorization: " + authToken + CRLF).getBytes());
@@ -786,7 +796,7 @@ public class GazeRtspClient {
             // profile-level-id=1
             // mode=AAC-hbr
             ArrayList<Pair<String, String>> retParams = new ArrayList<>();
-            for (String paramA: paramsA) {
+            for (String paramA : paramsA) {
                 paramA = paramA.trim();
                 // sprop-parameter-sets=Z0LAKIyNQDwBEvLAPCIRqA==,aM48gA==
                 int i = paramA.indexOf("=");
@@ -815,13 +825,13 @@ public class GazeRtspClient {
     }
 
     private static int getSupportedCapabilities(@NonNull ArrayList<Pair<String, String>> headers) {
-        for (Pair<String, String> head: headers) {
+        for (Pair<String, String> head : headers) {
             String h = head.first.toLowerCase();
             // Public: OPTIONS, DESCRIBE, SETUP, PLAY, GET_PARAMETER, SET_PARAMETER, TEARDOWN
             if ("public".equals(h)) {
                 int mask = 0;
                 String[] tokens = TextUtils.split(head.second.toLowerCase(), ",");
-                for (String token: tokens) {
+                for (String token : tokens) {
                     switch (token.trim()) {
                         case "options" -> mask |= RTSP_CAPABILITY_OPTIONS;
                         case "describe" -> mask |= RTSP_CAPABILITY_DESCRIBE;
@@ -844,7 +854,7 @@ public class GazeRtspClient {
 
     @Nullable
     private static Pair<String, String> getHeaderWwwAuthenticateDigestRealmAndNonce(@NonNull ArrayList<Pair<String, String>> headers) {
-        for (Pair<String, String> head: headers) {
+        for (Pair<String, String> head : headers) {
             String h = head.first.toLowerCase();
             // WWW-Authenticate: Digest realm="AXIS_00408CEF081C", nonce="00054cecY7165349339ae05f7017797d6b0aaad38f6ff45", stale=FALSE
             // WWW-Authenticate: Basic realm="AXIS_00408CEF081C"
@@ -859,7 +869,7 @@ public class GazeRtspClient {
                 String digestRealm = v.substring(begin, end);
 
                 begin = v.indexOf("nonce=");
-                begin = v.indexOf('"', begin)+1;
+                begin = v.indexOf('"', begin) + 1;
                 end = v.indexOf('"', begin);
                 String digestNonce = v.substring(begin, end);
 
@@ -871,7 +881,7 @@ public class GazeRtspClient {
 
     @Nullable
     private static String getHeaderWwwAuthenticateBasicRealm(@NonNull ArrayList<Pair<String, String>> headers) {
-        for (Pair<String, String> head: headers) {
+        for (Pair<String, String> head : headers) {
             // Session: ODgyODg3MjQ1MDczODk3NDk4Nw
             String h = head.first.toLowerCase();
             String v = head.second.toLowerCase();
@@ -1054,7 +1064,7 @@ public class GazeRtspClient {
                         return "";//break;
 
                     // Found EOL. Add to array.
-                    return new String(bufferLine, 0, offset-1);
+                    return new String(bufferLine, 0, offset - 1);
                 } else {
                     offset++;
                 }
@@ -1085,7 +1095,7 @@ public class GazeRtspClient {
 
     @Nullable
     private static String getHeader(@NonNull ArrayList<Pair<String, String>> headers, @NonNull String header) {
-        for (Pair<String, String> head: headers) {
+        for (Pair<String, String> head : headers) {
             // Session: ODgyODg3MjQ1MDczODk3NDk4Nw
             String h = head.first.toLowerCase();
             if (header.toLowerCase().equals(h)) {
@@ -1149,7 +1159,6 @@ public class GazeRtspClient {
 //            this.sendOptionsCommand = sendOptionsCommand;
 //            return this;
 //        }
-
 
 
         @NonNull

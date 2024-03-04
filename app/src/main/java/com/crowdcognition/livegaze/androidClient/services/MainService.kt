@@ -39,7 +39,7 @@ import org.json.JSONObject
 import org.opencv.android.OpenCVLoader
 
 
-private const val CLIENT_IP = "10.181.114.108"
+private const val CLIENT_IP = "127.0.0.1"
 private const val DEFAULT_RTSP_REQUEST = "rtsp://${CLIENT_IP}:8086/?camera=world"
 private const val DEFAULT_HTTP_REQUEST = "http://${CLIENT_IP}:8080/api/status"
 
@@ -47,7 +47,7 @@ class MainService : Service() {
 
     private val binder = LocalBinder()
     private var serviceJob: Job? = null
-    var socketIOManager: SocketManager = SocketManager("http://10.181.216.185:5000")
+    var socketIOManager: SocketManager = SocketManager("http://192.168.0.150:5000")
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
     var companionId: String = ""

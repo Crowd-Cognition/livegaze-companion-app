@@ -94,7 +94,7 @@ public class RtpParser {
         }
 
         public void dumpHeader() {
-            Log.d("RTP","RTP header version: " + version
+            if (DEBUG) Log.d("RTP","RTP header version: " + version
                     + ", padding: " + padding
                     + ", ext: " + extension
                     + ", cc: " + cc
