@@ -50,7 +50,7 @@ class MainService : Service() {
     var socketIOManager: SocketManager = SocketManager("http://192.168.0.150:5000")
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
-    var companionId: String = ""
+    var companionId: String = "test_id"
     private var surfaceHandler: RtspVideoHandler? = null
     private var resultParseThread : ResultParseThread? = null
     private val rtspRequest = MutableLiveData<String>().apply {
@@ -135,8 +135,12 @@ class MainService : Service() {
         Log.i("json", jsonString)
         val responseJson = JSONObject(jsonString)
         val resultArray = responseJson.getJSONArray("result")
-        val companionResult = resultArray.getJSONObject(resultArray.length() - 2)
-        companionId = companionResult.getJSONObject("data").getString("device_id")
+        for(i in 0 until resultArray.length()) {
+            val result = resultArray.getJSONObject(i)
+            Log.i("jsonTags", result.getString("model"))
+            if (result.getString("model") == "Phone")
+                companionId = result.getJSONObject("data").getString("device_id")
+        }
 
         /*
             {"message":"Success","result":[{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dimu","port":8686,"protocol":"rtsp","sensor":"imu"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dimu","port":8086,"protocol":"rtsp","sensor":"imu"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dworld","port":8686,"protocol":"rtsp","sensor":"world"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dworld","port":8086,"protocol":"rtsp","sensor":"world"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003dgaze","port":8686,"protocol":"rtsp","sensor":"gaze"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003dgaze","port":8086,"protocol":"rtsp","sensor":"gaze"},"model":"Sensor"},{"data":{"conn_type":"WEBSOCKET","connected":true,"ip":"10.181.112.159","params":"camera\u003deyes","port":8686,"protocol":"rtsp","sensor":"eyes"},"model":"Sensor"},{"data":{"conn_type":"DIRECT","connected":true,"ip":"10.181.112.159","params":"camera\u003deyes","port":8086,"protocol":"rtsp","sensor":"eyes"},"model":"Sensor"},{"data":{"battery_level":39,"battery_state":"OK","device_id":"1ee2d98fa1fa0d2f","device_name":"Neon Companion","ip":"10.181.112.159","memory":32512851968,"memory_state":"OK","time_echo_port":12321},"model":"Phone"},{"data":{"frame_name":"Just act natural","glasses_serial":"-1","module_serial":"396621","version":"2.0","world_camera_serial":"-1"},"model":"Hardware"}]}
