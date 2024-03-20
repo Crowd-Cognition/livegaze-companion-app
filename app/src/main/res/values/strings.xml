@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LiveGaze</string>
+    <string name="app_name">LiveGaze Companion App</string>
     <string name="title_live">Live</string>
     <string name="title_logs">Logs</string>
 </resources>

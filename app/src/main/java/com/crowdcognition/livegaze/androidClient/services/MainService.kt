@@ -47,7 +47,7 @@ class MainService : Service() {
 
     private val binder = LocalBinder()
     private var serviceJob: Job? = null
-    var socketIOManager: SocketManager = SocketManager("http://192.168.0.150:5000")
+    var socketIOManager: SocketManager = SocketManager("http://10.181.220.106:5000")
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
     var companionId: String = "test_id"
@@ -222,8 +222,8 @@ class MainService : Service() {
         ) else Notification.Builder(this)
 
         return builder
-            .setContentTitle("Endless Service")
-            .setContentText("This is your favorite endless service working")
+            .setContentTitle("Livegaze Companion Service")
+            .setContentText("Livegaze companion is working on the background to send data to the server")
             .setContentIntent(pendingIntent)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setTicker("Ticker text")
