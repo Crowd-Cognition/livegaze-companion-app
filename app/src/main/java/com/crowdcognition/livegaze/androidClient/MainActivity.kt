@@ -2,13 +2,16 @@ package com.crowdcognition.livegaze.androidClient
 
 import android.content.ComponentName
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -65,6 +68,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        MainService.serverAddress = getPreferences(Context.MODE_PRIVATE).getString("serverIp", MainService.serverAddress)!!;
+        findViewById<EditText>(R.id.ip_input).setText(MainService.serverAddress);
         checkAndRequestNotificationPermission()
 
 //        var mainService = MainService()
@@ -99,6 +104,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startService() {
+        MainService.serverAddress = findViewById<EditText>(R.id.ip_input).text.toString();
+        with(getPreferences(Context.MODE_PRIVATE).edit()) {
+            putString("serverIp", MainService.serverAddress)
+            apply()
+        }
         Intent(this, MainService::class.java).also {
             it.action = "START"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -47,7 +47,7 @@ class MainService : Service() {
 
     private val binder = LocalBinder()
     private var serviceJob: Job? = null
-    var socketIOManager: SocketManager = SocketManager("http://10.181.220.106:5000")
+    var socketIOManager: SocketManager? = null;
     var receivedBitmap : Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
     var companionId: String = "test_id"
@@ -55,6 +55,10 @@ class MainService : Service() {
     private var resultParseThread : ResultParseThread? = null
     private val rtspRequest = MutableLiveData<String>().apply {
         value = DEFAULT_RTSP_REQUEST
+    }
+
+    companion object{
+        var serverAddress : String = "http://10.181.202.21:5000"
     }
 
     inner class LocalBinder : Binder() {
@@ -83,8 +87,8 @@ class MainService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         Log.i("MainService", "start")
-
-        socketIOManager.connect()
+        socketIOManager = SocketManager(serverAddress)
+        socketIOManager!!.connect()
 
         if (intent != null) {
             val action = intent.action

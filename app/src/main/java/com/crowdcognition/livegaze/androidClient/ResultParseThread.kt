@@ -89,7 +89,7 @@ class ResultParseThread(private var mainService: MainService, private var imageP
                 }
                 val plane = Plane(arucoTags)
                 var values = plane.getPosInPlane(mainService.gazePos)
-                mainService.socketIOManager.sendData(arucoTags.map{it.id}.toTypedArray(),
+                mainService.socketIOManager!!.sendData(arucoTags.map{it.id}.toTypedArray(),
                     values[0], values[1], mainService.companionId)
                 for((i, tag) in plane.tags.withIndex()) {
                     Imgproc.circle(img, Point(tag.center[0], tag.center[1]), 10, Scalar(0.0,255.0,255.0))

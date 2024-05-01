@@ -16,7 +16,20 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="StartService Using Button Below"
+            android:text="Enter server IP"
+            android:textSize="15pt"> </TextView>
+
+        <EditText
+            android:autofillHints="set your ip"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textSize="10pt"
+            android:id="@+id/ip_input"> </EditText>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Start Service Using Button Below"
             android:textSize="15pt"> </TextView>
 
         <Button
