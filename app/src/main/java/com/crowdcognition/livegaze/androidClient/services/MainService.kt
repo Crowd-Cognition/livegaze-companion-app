@@ -167,7 +167,6 @@ class MainService : Service() {
         val uriParts = rtspRequest.value!!.split("?").toMutableList()
         uriParts[1] = "camera\u003dgaze"
         val gazeUriText = uriParts.joinToString(separator = "?")
-        Log.i("GazeURI",gazeUriText)
         val gazeUri = Uri.parse(gazeUriText)
         surfaceHandler?.init(uri, gazeUri,"","", "rtsp-client-android")
         surfaceHandler?.debug = true

@@ -91,14 +91,30 @@ class ResultParseThread(private var mainService: MainService, private var imageP
                 var values = plane.getPosInPlane(mainService.gazePos)
                 mainService.socketIOManager!!.sendData(arucoTags.map{it.id}.toTypedArray(),
                     values[0], values[1], mainService.companionId)
-                for((i, tag) in plane.tags.withIndex()) {
-                    Imgproc.circle(img, Point(tag.center[0], tag.center[1]), 10, Scalar(0.0,255.0,255.0))
-                    Imgproc.putText(img, "$i",Point(tag.center[0], tag.center[1]), Imgproc.FONT_HERSHEY_TRIPLEX, 10.0, Scalar(0.0,255.0,0.0))
+                if (DEBUG_IMAGE_PARSE) {
+                    for ((i, tag) in plane.tags.withIndex()) {
+                        Imgproc.circle(
+                            img,
+                            Point(tag.center[0], tag.center[1]),
+                            10,
+                            Scalar(0.0, 255.0, 255.0)
+                        )
+                        Imgproc.putText(
+                            img,
+                            "$i",
+                            Point(tag.center[0], tag.center[1]),
+                            Imgproc.FONT_HERSHEY_TRIPLEX,
+                            10.0,
+                            Scalar(0.0, 255.0, 0.0)
+                        )
+                    }
                 }
             }
-            Utils.matToBitmap(img, selectedBitmap)
+            if (DEBUG_IMAGE_PARSE){
+                Utils.matToBitmap(img, selectedBitmap)
+                imageParseListener.onObjectParseReady(selectedBitmap!!);
+            }
             if (DEBUG)Log.d("RTSP Listener", "Image Received ${ids.size()}")
-            imageParseListener.onObjectParseReady(selectedBitmap!!);
 
         }
     }
@@ -107,6 +123,7 @@ class ResultParseThread(private var mainService: MainService, private var imageP
     companion object {
         private val TAG: String = VideoDecodeThread::class.java.simpleName
         private const val DEBUG = false
+        private const val DEBUG_IMAGE_PARSE = false;
 
         private val DEQUEUE_INPUT_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(500)
         private val DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = TimeUnit.MILLISECONDS.toMicros(100)
