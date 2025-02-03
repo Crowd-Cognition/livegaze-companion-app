@@ -26,25 +26,57 @@
             android:textSize="10pt"
             android:id="@+id/ip_input"> </EditText>
 
+        <Button
+            android:id="@+id/refresh_connection_button"
+            android:layout_width="120pt"
+            android:layout_height="20pt"
+            android:text="@string/refresh_connection_button_text"
+            android:layout_gravity="end"
+            android:textSize="10pt"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/btn_background"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Start Service Using Button Below"
-            android:textSize="15pt"> </TextView>
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginStart="20pt"
+            android:text="@string/server_connection"
+            android:textColor="@color/unfocusedText"
+            android:textSize="10pt"
+            android:visibility="invisible"> </TextView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20pt"
+            android:layout_marginStart="20pt"
+            android:textColor="@color/unfocusedText"
+            android:text="@string/companion_connection"
+            android:textSize="10pt"
+            android:visibility="invisible"> </TextView>
+
+        <CheckBox
+            android:id="@+id/calibration_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/calibration"/>
 
         <Button
             android:id="@+id/start_button"
             android:layout_width="70pt"
-            android:layout_height="40pt"
-            android:text="start"
-            android:textSize="15pt"/>
+            android:layout_height="30pt"
+            android:layout_gravity="end"
+            android:text="@string/start"
+            android:textSize="15pt" />
 
-        <Button
-            android:id="@+id/stop_button"
-            android:layout_width="70pt"
-            android:layout_height="40pt"
-            android:text="stop"
-            android:textSize="15pt"/>
+<!--        <Button-->
+<!--            android:id="@+id/stop_button"-->
+<!--            android:layout_width="70pt"-->
+<!--            android:layout_height="40pt"-->
+<!--            android:text="stop"-->
+<!--            android:textSize="15pt"/>-->
 
     </LinearLayout>
 
