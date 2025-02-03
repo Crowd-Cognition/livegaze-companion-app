@@ -88,11 +88,9 @@ class MainService : Service() {
 
         Log.i("MainService", "start")
         socketIOManager = SocketManager(serverAddress)
-        socketIOManager!!.connect()
 
         if (intent != null) {
             val action = intent.action
-//            log.i("useAction","using an intent with action $action")
             when (action) {
                 "START" -> startService()
                 "STOP" -> stopService()
@@ -103,8 +101,6 @@ class MainService : Service() {
             )
         }
         // by returning this we make sure the service is restarted if the system kills the service
-
-
         
         return START_STICKY
     }
@@ -135,13 +131,23 @@ class MainService : Service() {
 
 //        Log.i("re", response.message)
 //        Log.i("re", response.body?.string()!!)
+        if (response.code != 200) {
+            // Try again
+            Log.i("MainService", "Failed to get companion id")
+            // Wait for 5 seconds and then send the request again
+            Thread.sleep(5000)
+            CoroutineScope(Dispatchers.IO).launch {
+                val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
+                receivedResponse(httpResponse!!)
+            }
+        }
         val jsonString = response.body?.string()!!
-        Log.i("json", jsonString)
+//        Log.i("json", jsonString)
         val responseJson = JSONObject(jsonString)
         val resultArray = responseJson.getJSONArray("result")
         for(i in 0 until resultArray.length()) {
             val result = resultArray.getJSONObject(i)
-            Log.i("jsonTags", result.getString("model"))
+//            Log.i("jsonTags", result.getString("model"))
             if (result.getString("model") == "Phone")
                 companionId = result.getJSONObject("data").getString("device_id")
         }
@@ -153,12 +159,13 @@ class MainService : Service() {
 //        val resultList = jsonObject.getJSONArray("result")
 
 //        Log.i("re", "${resultList.length()}")
-
+        socketIOManager!!.connect()
         surfaceHandler = RtspVideoHandler();
         surfaceHandler?.rtspFrameListener = rtspFrameListener;
         surfaceHandler?.setStatusListener(rtspStatusListener)
         surfaceHandler?.gazeDataListener = gazeDataListener;
         if(!OpenCVLoader.initDebug()) {
+            //TODO: opencv did not initialize, do something!
         }
 
 //        liveViewModel = ViewModelProvider(this).get(LiveViewModel::class.java)
@@ -184,6 +191,7 @@ class MainService : Service() {
             Log.i("MainService", "stopped")
             resultParseThread?.stopAsync()
             surfaceHandler?.stop()
+            socketIOManager?.disconnect()
             stopForeground(true)
             stopSelf()
         } catch (e: Exception) {

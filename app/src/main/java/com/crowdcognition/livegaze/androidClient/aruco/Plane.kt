@@ -70,7 +70,7 @@ class Plane(val tags: ArrayList<ArucoTag>) {
     }
 
     companion object {
-        const val DEBUG = true
+        const val DEBUG = false
         const val tangentDegStart = (-135 * PI / 180)
         const val degDiff = 2 * PI
     }

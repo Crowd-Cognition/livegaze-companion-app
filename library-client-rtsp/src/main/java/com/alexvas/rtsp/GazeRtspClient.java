@@ -537,11 +537,10 @@ public class GazeRtspClient {
 //                throw new RuntimeException(e);
 //            }
 
-            if (DEBUG) Log.i("readData", "$data.length data" + data.length);
-            if (data.length == 9) {
+            if (DEBUG) Log.i("readData", "$data.length data" + data.length + " " + header.payloadSize);
+            if (data.length >= 9) {
                 float x = ByteBuffer.wrap(Arrays.copyOfRange(data, 0, 4)).order(ByteOrder.BIG_ENDIAN).getFloat();
                 float y = ByteBuffer.wrap(Arrays.copyOfRange(data, 4, 8)).order(ByteOrder.BIG_ENDIAN).getFloat();
-                //byte value is 255 (which is -1 in signed form)
                 boolean isWeared = data[8] == -1;
                 dataListener.onGazeDataReady(new float[]{x, y});
                 long tsLong = System.currentTimeMillis() / 1000;
