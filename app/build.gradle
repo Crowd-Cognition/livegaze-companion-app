@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation ("com.quickbirdstudios:opencv-contrib:4.5.2")
+    implementation ("com.quickbirdstudios:opencv-contrib:4.5.3.0")
     def androidXNavigationVersion = '2.7.6'
     implementation "androidx.navigation:navigation-fragment-ktx:$androidXNavigationVersion"
     implementation "androidx.navigation:navigation-ui-ktx:$androidXNavigationVersion"
@@ -58,9 +58,7 @@ dependencies {
     api "com.github.AppDevNext.Logcat:LogcatCoreUI:2.12"
     implementation project(':library-client-rtsp')
     implementation project(':renderscript-toolkit')
-    implementation ('io.socket:socket.io-client:2.0.0') {
-        exclude group: 'org.json', module: 'json'
-    }
+    implementation ('io.socket:socket.io-client:2.1.2-SNAPSHOT')
 
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:okhttp")

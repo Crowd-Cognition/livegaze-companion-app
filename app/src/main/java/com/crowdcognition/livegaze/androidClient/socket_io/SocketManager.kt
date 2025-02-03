@@ -38,7 +38,8 @@ class SocketManager(uri: String) {
         }
         Log.i("data", dataJson.toString())
 
-        socket!!.emit("new_gaze_data", dataJson);
+//        socket!!.emit("new_gaze_data", dataJson);
+        socket!!.volatile.emit("new_gaze_data", dataJson);
     }
 
 
