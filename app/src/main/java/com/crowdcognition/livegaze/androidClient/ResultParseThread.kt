@@ -89,7 +89,7 @@ class ResultParseThread(private var mainService: MainService, private var imageP
                 }
                 val plane = Plane(arucoTags)
                 var values = plane.getPosInPlane(mainService.gazePos)
-                mainService.socketIOManager!!.sendData(arucoTags.map{it.id}.toTypedArray(),
+                MainService.socketIOManager!!.sendData(arucoTags.map{it.id}.toTypedArray(),
                     values[0], values[1], mainService.companionId)
                 if (DEBUG_IMAGE_PARSE) {
                     for ((i, tag) in plane.tags.withIndex()) {

@@ -25,6 +25,17 @@ class SocketManager(uri: String) {
         socket!!.connect();
     }
 
+    fun listenToEvent(eventName: String, callback: (JSONArray?) -> Unit) {
+        socket!!.on(eventName) { args ->
+            val data = if(args.isNotEmpty()) args[0] as JSONArray else null
+            callback(data)
+        }
+    }
+
+    fun sendPing() {
+        socket!!.emit("ping")
+    }
+
     fun sendData(arucoTagIds: Array<Int>, positionX: Float, positionY: Float, cameraId: String) {
         val dataJson = JSONObject();
 

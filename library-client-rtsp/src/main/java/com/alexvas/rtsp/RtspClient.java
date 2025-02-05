@@ -124,7 +124,7 @@ public class RtspClient {
 
     private static final String TAG = RtspClient.class.getSimpleName();
             static final String TAG_DEBUG = TAG + " DBG";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     public final static int RTSP_CAPABILITY_NONE          = 0;
     public final static int RTSP_CAPABILITY_OPTIONS       = 1 << 1;

@@ -37,6 +37,18 @@
             android:background="@drawable/btn_background"/>
 
         <TextView
+            android:id="@+id/companion_connection_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20pt"
+            android:layout_marginStart="20pt"
+            android:textColor="@color/unfocusedText"
+            android:text="@string/companion_connection"
+            android:textSize="10pt"
+            android:visibility="invisible"> </TextView>
+
+        <TextView
+            android:id="@+id/server_connection_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -44,16 +56,6 @@
             android:layout_marginStart="20pt"
             android:text="@string/server_connection"
             android:textColor="@color/unfocusedText"
-            android:textSize="10pt"
-            android:visibility="invisible"> </TextView>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20pt"
-            android:layout_marginStart="20pt"
-            android:textColor="@color/unfocusedText"
-            android:text="@string/companion_connection"
             android:textSize="10pt"
             android:visibility="invisible"> </TextView>
 
@@ -69,7 +71,8 @@
             android:layout_height="30pt"
             android:layout_gravity="end"
             android:text="@string/start"
-            android:textSize="15pt" />
+            android:textSize="15pt"
+            android:visibility="invisible"/>
 
 <!--        <Button-->
 <!--            android:id="@+id/stop_button"-->

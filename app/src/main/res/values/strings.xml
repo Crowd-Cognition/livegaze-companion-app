@@ -10,4 +10,5 @@
     <string name="calibration">Calibration</string>
     <string name="start">start</string>
     <string name="stop">stop</string>
+    <string name="device_not_found">Device not found, are the eye trackers safely connected?</string>
 </resources>
