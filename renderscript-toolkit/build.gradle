@@ -5,12 +5,12 @@ plugins {
 
 android {
 
-    compileSdk 33
+    compileSdk 34
     ndkVersion "25.1.8937393"
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 33
+        minSdkVersion 19
+        targetSdkVersion 34
         multiDexEnabled true
         consumerProguardFiles "consumer-rules.pro"
         externalNativeBuild {

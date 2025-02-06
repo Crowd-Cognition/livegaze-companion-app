@@ -5,8 +5,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.exoplayer2.util.ParsableBitArray;
-import com.google.android.exoplayer2.util.ParsableByteArray;
+//import com.google.android.exoplayer2.util.ParsableBitArray;
+//import com.google.android.exoplayer2.util.ParsableByteArray;
+import androidx.media3.common.util.ParsableByteArray;
+import androidx.media3.common.util.ParsableBitArray;
+import androidx.media3.common.util.UnstableApi;
 
 // https://tools.ietf.org/html/rfc3640
 //          +---------+-----------+-----------+---------------+
@@ -15,7 +18,7 @@ import com.google.android.exoplayer2.util.ParsableByteArray;
 //         +---------+-----------+-----------+---------------+
 //
 //                   <----------RTP Packet Payload----------->
-public class AacParser {
+@UnstableApi public class AacParser {
 
     private static final String TAG = AacParser.class.getSimpleName();
     private static final boolean DEBUG = false;

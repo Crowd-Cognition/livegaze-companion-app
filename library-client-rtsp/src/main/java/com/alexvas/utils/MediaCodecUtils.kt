@@ -2,8 +2,12 @@ package com.alexvas.utils
 
 import android.util.Log
 import android.util.Range
-import com.google.android.exoplayer2.mediacodec.MediaCodecInfo
-import com.google.android.exoplayer2.mediacodec.MediaCodecUtil
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
+import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
+//import com.google.android.exoplayer2.mediacodec.MediaCodecInfo
+//import com.google.android.exoplayer2.mediacodec.MediaCodecUtil
 import java.lang.Exception
 
 object MediaCodecUtils {
@@ -14,6 +18,7 @@ object MediaCodecUtils {
 
     private val TAG: String = MediaCodecUtils::class.java.simpleName
 
+    @OptIn(UnstableApi::class)
     private fun getDecoderInfos(mimeType: String): List<MediaCodecInfo> {
         val list = decoderInfosMap[mimeType]
         return if (list.isNullOrEmpty()) {
@@ -33,7 +38,7 @@ object MediaCodecUtils {
     /**
      * Get software decoders list. Usually used as fallback.
      */
-    @Synchronized
+    @OptIn(UnstableApi::class) @Synchronized
     fun getSoftwareDecoders(mimeType: String): List<MediaCodecInfo> {
         val decoderInfos = getDecoderInfos(mimeType)
         val list = ArrayList<MediaCodecInfo>()
@@ -47,7 +52,7 @@ object MediaCodecUtils {
     /**
      * Get hardware accelerated decoders list. Used as default.
      */
-    @Synchronized
+    @OptIn(UnstableApi::class) @Synchronized
     fun getHardwareDecoders(mimeType: String): List<MediaCodecInfo> {
         val decoderInfos = getDecoderInfos(mimeType)
         val list = ArrayList<MediaCodecInfo>()

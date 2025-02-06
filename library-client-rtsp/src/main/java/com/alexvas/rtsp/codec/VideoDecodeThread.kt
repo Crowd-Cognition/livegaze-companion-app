@@ -11,10 +11,13 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Surface
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.util.Util
 import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.utils.MediaCodecUtils
 import com.alexvas.utils.capabilitiesToString
-import com.google.android.exoplayer2.util.Util
+//import com.google.android.exoplayer2.util.Util
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -55,7 +58,7 @@ class VideoDecodeThread (
         interrupt()
     }
 
-    private fun getDecoderSafeWidthHeight(decoder: MediaCodec): Pair<Int, Int> {
+    @OptIn(UnstableApi::class) private fun getDecoderSafeWidthHeight(decoder: MediaCodec): Pair<Int, Int> {
         val capabilities = decoder.codecInfo.getCapabilitiesForType(mimeType).videoCapabilities
         return if (capabilities.isSizeSupported(width, height)) {
             Pair(width, height)
@@ -114,6 +117,7 @@ class VideoDecodeThread (
         SOFTWARE // fallback
     }
 
+    @OptIn(UnstableApi::class)
     private fun createVideoDecoderAndStart(decoderType: DecoderType): MediaCodec {
         if (DEBUG) Log.v(TAG, "createVideoDecoderAndStart(decoderType=$decoderType)")
 

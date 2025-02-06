@@ -39,5 +39,6 @@ android {
 
 dependencies {
     implementation "androidx.annotation:annotation:$androidXAnnotationVersion"
-    implementation "com.google.android.exoplayer:exoplayer-core:$exoplayerVersion"
+    implementation "androidx.media3:media3-exoplayer:1.5.1"
+//    implementation "com.google.android.exoplayer:exoplayer-core:$exoplayerVersion"
 }
