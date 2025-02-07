@@ -6,7 +6,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.crowdcognition.livegazeCompanion"
+        applicationId "com.crowdcognition.livegaze"
         minSdkVersion 24
         targetSdkVersion 35
         versionCode 1

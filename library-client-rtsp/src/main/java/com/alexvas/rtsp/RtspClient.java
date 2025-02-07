@@ -7,6 +7,8 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
+import androidx.media3.common.util.UnstableApi;
 
 import com.alexvas.rtsp.parser.AacParser;
 import com.alexvas.rtsp.parser.RtpParser;
@@ -583,7 +585,7 @@ public class RtspClient {
         }
     }
 
-    private static void readRtpData(
+    @OptIn(markerClass = UnstableApi.class) private static void readRtpData(
             @NonNull InputStream inputStream,
             @NonNull SdpInfo sdpInfo,
             @NonNull AtomicBoolean exitFlag,

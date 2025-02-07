@@ -228,23 +228,6 @@ open class RtspVideoHandler {
         }
     }
 
-//    constructor(context: Context) : super(context) {
-//        initView(context, null, 0)
-//    }
-//
-//    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-//        initView(context, attrs, 0)
-//    }
-//
-//    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-//        initView(context, attrs, defStyleAttr)
-//    }
-
-//    private fun initView(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-//        if (DEBUG) Log.v(TAG, "initView()")
-//        holder.addCallback(surfaceCallback)
-//    }
-
     fun init(uri: Uri, username: String?, password: String?) {
         init(uri,null, username, password, null)
     }

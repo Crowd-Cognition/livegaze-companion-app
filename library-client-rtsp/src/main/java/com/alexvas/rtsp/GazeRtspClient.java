@@ -1027,20 +1027,6 @@ public class GazeRtspClient {
         return false;
     }
 
-//    private boolean readUntilByteFound(@NonNull InputStream inputStream, byte bt) throws IOException {
-//        byte[] buffer = new byte[1];
-//        int readBytes;
-//        while (!exitFlag.get()) {
-//            readBytes = inputStream.read(buffer, 0, 1);
-//            if (readBytes == -1) // EOF
-//                return false;
-//            if (readBytes == 1 && buffer[0] == bt) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-
     @Nullable
     private String readLine(@NonNull InputStream inputStream) throws IOException {
         byte[] bufferLine = new byte[MAX_LINE_SIZE];
@@ -1152,13 +1138,6 @@ public class GazeRtspClient {
             this.userAgent = userAgent;
             return this;
         }
-
-//        @NonNull
-//        public Builder sendOptionsCommand(boolean sendOptionsCommand) {
-//            this.sendOptionsCommand = sendOptionsCommand;
-//            return this;
-//        }
-
 
         @NonNull
         public GazeRtspClient build() {

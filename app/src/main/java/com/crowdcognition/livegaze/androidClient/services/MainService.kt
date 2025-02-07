@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -15,7 +14,6 @@ import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.alexvas.rtsp.GazeDataListener
 import com.alexvas.rtsp.RTSPClientListener
@@ -27,15 +25,7 @@ import com.crowdcognition.livegaze.androidClient.ResultParseThread
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
 import com.google.android.renderscript.Toolkit
 import com.google.android.renderscript.YuvFormat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okio.IOException
-import org.json.JSONObject
 import org.opencv.android.OpenCVLoader
 import timber.log.Timber
 
@@ -46,18 +36,18 @@ class MainService : Service() {
 
     private val binder = LocalBinder()
     private var serviceJob: Job? = null
-    var receivedBitmap : Bitmap? = null
-    var gazePos: FloatArray = floatArrayOf(0.0f,0.0f)
+    var receivedBitmap: Bitmap? = null
+    var gazePos: FloatArray = floatArrayOf(0.0f, 0.0f)
     var companionId: String = "test_id"
     private var surfaceHandler: RtspVideoHandler? = null
-    private var resultParseThread : ResultParseThread? = null
+    private var resultParseThread: ResultParseThread? = null
     private val rtspRequest = MutableLiveData<String>().apply {
         value = DEFAULT_RTSP_REQUEST
     }
 
-    companion object{
-        var serverAddress : String = "http://10.181.202.21:5000"
-        var socketIOManager : SocketManager? = null
+    companion object {
+        var serverAddress: String = "http://10.181.202.21:5000"
+        var socketIOManager: SocketManager? = null
     }
 
     inner class LocalBinder : Binder() {
@@ -68,9 +58,13 @@ class MainService : Service() {
         super.onCreate()
         val notification = createNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(2, notification, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            } else { 0 })
+            startForeground(
+                2, notification, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                } else {
+                    0
+                }
+            )
         } else {
             startForeground(1, notification)
         }
@@ -86,7 +80,6 @@ class MainService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         Timber.i("start")
-//        socketIOManager = SocketManager(serverAddress)
 
         if (intent != null) {
             val action = intent.action
@@ -103,38 +96,16 @@ class MainService : Service() {
 
     private fun startService() {
         setupRTSPHandler()
-//        CoroutineScope(Dispatchers.IO).launch {
-////            val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
-//            receivedResponse(httpResponse!!)
-//        }
     }
 
 
     private fun setupRTSPHandler() {
-//        if (response.code != 200) {
-//            // Try again
-//            // Wait for 5 seconds and then send the request again
-//            Thread.sleep(5000)
-//            CoroutineScope(Dispatchers.IO).launch {
-//                val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
-//                receivedResponse(httpResponse!!)
-//            }
-//        }
-//        val jsonString = response.body?.string()!!
-//        val responseJson = JSONObject(jsonString)
-//        val resultArray = responseJson.getJSONArray("result")
-//        for(i in 0 until resultArray.length()) {
-//            val result = resultArray.getJSONObject(i)
-//            if (result.getString("model") == "Phone")
-//                companionId = result.getJSONObject("data").getString("device_id")
-//        }
-//        socketIOManager!!.connect()
         surfaceHandler = RtspVideoHandler();
         surfaceHandler?.rtspFrameListener = rtspFrameListener;
         surfaceHandler?.setStatusListener(rtspStatusListener)
         surfaceHandler?.gazeDataListener = gazeDataListener;
 
-        if(!OpenCVLoader.initDebug()) {
+        if (!OpenCVLoader.initDebug()) {
             Timber.i("OpenCV not loaded")
             Thread.sleep(1000)
         }
@@ -144,7 +115,7 @@ class MainService : Service() {
         uriParts[1] = "camera\u003dgaze"
         val gazeUriText = uriParts.joinToString(separator = "?")
         val gazeUri = Uri.parse(gazeUriText)
-        surfaceHandler?.init(uri, gazeUri,"","", "rtsp-client-android")
+        surfaceHandler?.init(uri, gazeUri, "", "", "rtsp-client-android")
         surfaceHandler?.debug = true
         resultParseThread = ResultParseThread(this, imageParseListener)
         surfaceHandler?.start(
@@ -171,7 +142,8 @@ class MainService : Service() {
         val notificationChannelId = "ENDLESS SERVICE CHANNEL"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
             val channel = NotificationChannel(
                 notificationChannelId,
                 "Endless Service notifications channel",
@@ -187,14 +159,16 @@ class MainService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val pendingIntent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
-            PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-        }
+        val pendingIntent: PendingIntent =
+            Intent(this, MainActivity::class.java).let { notificationIntent ->
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+            }
 
-        val builder: Notification.Builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(
-            this,
-            notificationChannelId
-        ) else Notification.Builder(this)
+        val builder: Notification.Builder =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(
+                this,
+                notificationChannelId
+            ) else Notification.Builder(this)
 
         return builder
             .setContentTitle("Livegaze Companion Service")
@@ -210,10 +184,11 @@ class MainService : Service() {
         return binder
     }
 
-    private val rtspStatusListener = object: RtspVideoHandler.RtspStatusListener {
+    private val rtspStatusListener = object : RtspVideoHandler.RtspStatusListener {
 
         override fun onRtspStatusConnecting() {
         }
+
         override fun onRtspStatusConnected() {
         }
 
