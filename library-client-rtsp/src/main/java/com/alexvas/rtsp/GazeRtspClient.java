@@ -8,17 +8,13 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.alexvas.rtsp.parser.AacParser;
 import com.alexvas.rtsp.parser.RtpParser;
-import com.alexvas.rtsp.parser.VideoRtpParser;
 import com.alexvas.utils.NetUtils;
-import com.alexvas.utils.VideoCodecUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -188,7 +184,7 @@ public class GazeRtspClient {
     private final @Nullable String password;
     private final @Nullable String userAgent;
 
-    private final @NonNull GazeDataListener gazedataListener;
+    private final @NonNull GazeDataListener gazeDataListener;
 
     private GazeRtspClient(@NonNull GazeRtspClient.Builder builder) {
         rtspSocket = builder.rtspSocket;
@@ -196,7 +192,7 @@ public class GazeRtspClient {
         exitFlag = builder.exitFlag;
         listener = builder.listener;
 //      sendOptionsCommand = builder.sendOptionsCommand;
-        gazedataListener = builder.dataListener;
+        gazeDataListener = builder.dataListener;
         username = builder.username;
         password = builder.password;
         debug = builder.debug;
@@ -450,7 +446,7 @@ public class GazeRtspClient {
                     readRtpData(
                             inputStream,
                             exitFlag,
-                            listener, gazedataListener,
+                            listener, gazeDataListener,
                             sessionTimeout / 2 * 1000,
                             keepAliveListener);
                 } finally {

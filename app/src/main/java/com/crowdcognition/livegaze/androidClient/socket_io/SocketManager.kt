@@ -59,4 +59,8 @@ class SocketManager(uri: String) {
         socket.off("new message");
     }
 
+    fun socketConnected() : Boolean {
+        return socket?.connected() ?: false
+    }
+
 }

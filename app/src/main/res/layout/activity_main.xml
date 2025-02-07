@@ -74,6 +74,18 @@
             android:textSize="15pt"
             android:visibility="invisible"/>
 
+        <TextView
+            android:id="@+id/sent_first_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20pt"
+            android:layout_marginStart="20pt"
+            android:textColor="@color/unfocusedText"
+            android:text="@string/first_video_frame_decoded"
+            android:textSize="10pt"
+            android:visibility="invisible">
+        </TextView>
+
 <!--        <Button-->
 <!--            android:id="@+id/stop_button"-->
 <!--            android:layout_width="70pt"-->

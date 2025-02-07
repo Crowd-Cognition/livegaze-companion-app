@@ -46,6 +46,13 @@ class MainActivity : AppCompatActivity() {
             val binder = service as MainService.LocalBinder
             mainService = binder.getService()
             serviceBoundState = true
+            mainService!!.firstFrameDecodedLiveData.observe(this@MainActivity, {
+                if (it) {
+                    findViewById<TextView>(R.id.sent_first_data).visibility = Button.VISIBLE
+                } else {
+                    findViewById<TextView>(R.id.sent_first_data).visibility = Button.INVISIBLE
+                }
+            })
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -78,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<Button>(R.id.refresh_connection_button).let{
+        findViewById<Button>(R.id.refresh_connection_button).let {
             it.setOnClickListener {
                 refreshConnection()
             }
@@ -90,7 +97,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        MainService.serverAddress = getPreferences(Context.MODE_PRIVATE).getString("serverIp", MainService.serverAddress)!!;
+        MainService.serverAddress =
+            getPreferences(Context.MODE_PRIVATE).getString("serverIp", MainService.serverAddress)!!;
         findViewById<EditText>(R.id.ip_input).setText(MainService.serverAddress);
         checkAndRequestNotificationPermission()
 
@@ -114,7 +122,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshConnection() {
-        //TODO: check connection to server, turn on texts
+
+        //Stop service if running
+        if (serviceBoundState) {
+            stopService()
+            val startButton = findViewById<Button>(R.id.start_button)
+            startButton.visibility = Button.INVISIBLE
+
+        }
 
         val companionConnectionText = findViewById<TextView>(R.id.companion_connection_text)
         companionConnectionText.visibility = TextView.VISIBLE
@@ -163,12 +178,12 @@ class MainActivity : AppCompatActivity() {
         val responseJson = JSONObject(jsonString)
         val resultArray = responseJson.getJSONArray("result")
         var companionId = ""
-        for(i in 0 until resultArray.length()) {
+        for (i in 0 until resultArray.length()) {
             val result = resultArray.getJSONObject(i)
             if (result.getString("model") == "Phone")
                 companionId = result.getJSONObject("data").getString("device_id")
         }
-        if (companionId=="") {
+        if (companionId == "") {
             //TODO: change texts to indicate failure
             CoroutineScope(Dispatchers.Main).launch {
                 companionConnectionText.text = getString(R.string.device_not_found)
@@ -186,6 +201,7 @@ class MainActivity : AppCompatActivity() {
             serverConnectionText.visibility = TextView.VISIBLE
             serverConnectionText.text = getString(R.string.server_connection)
         }
+        socketIOManager?.disconnect()
         socketIOManager = SocketManager(MainService.serverAddress);
 
         socketIOManager!!.connect()
@@ -209,15 +225,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startStopButtonPressed() {
+        val startButton = findViewById<Button>(R.id.start_button)
         if (serviceBoundState) {
+            startButton.text = getString(R.string.start)
             stopService()
         } else {
+            startButton.text = getString(R.string.stop)
             startService()
         }
     }
 
     private fun stopService() {
         mainService?.stopService()
+        CoroutineScope(Dispatchers.Main).launch {
+            findViewById<TextView>(R.id.companion_connection_text).visibility = TextView.INVISIBLE
+            findViewById<TextView>(R.id.server_connection_text).visibility = TextView.INVISIBLE
+            findViewById<TextView>(R.id.start_button).visibility = Button.INVISIBLE
+        }
     }
 
     private fun startService() {
@@ -233,7 +257,7 @@ class MainActivity : AppCompatActivity() {
             it.action = "START"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(it)
-            }else {
+            } else {
                 startService(it)
             }
             tryToBindToServiceIfRunning()

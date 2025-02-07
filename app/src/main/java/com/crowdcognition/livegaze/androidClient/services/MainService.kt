@@ -25,7 +25,9 @@ import com.crowdcognition.livegaze.androidClient.ResultParseThread
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
 import com.google.android.renderscript.Toolkit
 import com.google.android.renderscript.YuvFormat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import org.opencv.android.OpenCVLoader
 import timber.log.Timber
 
@@ -39,8 +41,11 @@ class MainService : Service() {
     var receivedBitmap: Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f, 0.0f)
     var companionId: String = "test_id"
-    private var surfaceHandler: RtspVideoHandler? = null
+    private var videoHandler: RtspVideoHandler? = null
     private var resultParseThread: ResultParseThread? = null
+    var firstFrameDecodedLiveData = MutableLiveData<Boolean>().apply {
+        value = false
+    }
     private val rtspRequest = MutableLiveData<String>().apply {
         value = DEFAULT_RTSP_REQUEST
     }
@@ -100,10 +105,10 @@ class MainService : Service() {
 
 
     private fun setupRTSPHandler() {
-        surfaceHandler = RtspVideoHandler();
-        surfaceHandler?.rtspFrameListener = rtspFrameListener;
-        surfaceHandler?.setStatusListener(rtspStatusListener)
-        surfaceHandler?.gazeDataListener = gazeDataListener;
+        videoHandler = RtspVideoHandler();
+        videoHandler?.rtspFrameListener = rtspFrameListener;
+        videoHandler?.setStatusListener(rtspStatusListener)
+        videoHandler?.gazeDataListener = gazeDataListener;
 
         if (!OpenCVLoader.initDebug()) {
             Timber.i("OpenCV not loaded")
@@ -115,10 +120,10 @@ class MainService : Service() {
         uriParts[1] = "camera\u003dgaze"
         val gazeUriText = uriParts.joinToString(separator = "?")
         val gazeUri = Uri.parse(gazeUriText)
-        surfaceHandler?.init(uri, gazeUri, "", "", "rtsp-client-android")
-        surfaceHandler?.debug = true
+        videoHandler?.init(uri, gazeUri, "", "", "rtsp-client-android")
+        videoHandler?.debug = true
         resultParseThread = ResultParseThread(this, imageParseListener)
-        surfaceHandler?.start(
+        videoHandler?.start(
             requestVideo = true,
             requestAudio = false,
             parseThread = resultParseThread
@@ -129,9 +134,10 @@ class MainService : Service() {
         try {
             Timber.i("stopped")
             resultParseThread?.stopAsync()
-            surfaceHandler?.stop()
+            videoHandler?.stop()
             socketIOManager?.disconnect()
             stopForeground(true)
+            firstFrameDecodedLiveData.postValue(false)
             stopSelf()
         } catch (e: Exception) {
             Timber.i("Service stopped without being started: ${e.message}")
@@ -231,6 +237,10 @@ class MainService : Service() {
                     receivedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
                 }
             }
+        }
+
+        override fun onRTSPFirstFrameRendered() {
+            firstFrameDecodedLiveData.postValue(true)
         }
     }
 }
