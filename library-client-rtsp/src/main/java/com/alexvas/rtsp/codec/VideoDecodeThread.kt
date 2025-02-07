@@ -37,6 +37,7 @@ class VideoDecodeThread (
     public var clientListener : RTSPClientListener? = null;
     private var newHeight = height;
     private var newWidth = width;
+    private var firstFrameDecoded = false;
 
     interface VideoDecoderListener {
         /** Video decoder successfully started */
@@ -144,15 +145,15 @@ class VideoDecodeThread (
             }
         }
 
-        val frameRenderedListener = OnFrameRenderedListener { _, _, _ ->
-            if (!firstFrameRendered) {
-                firstFrameRendered = true
-                uiHandler.post {
-                    videoDecoderListener.onVideoDecoderFirstFrameRendered()
-                }
-            }
-        }
-        decoder.setOnFrameRenderedListener(frameRenderedListener, null)
+//        val frameRenderedListener = OnFrameRenderedListener { _, _, _ ->
+//            if (!firstFrameRendered) {
+//                firstFrameRendered = true
+//                uiHandler.post {
+//                    videoDecoderListener.onVideoDecoderFirstFrameRendered()
+//                }
+//            }
+//        }
+//        decoder.setOnFrameRenderedListener(frameRenderedListener, null)
         val format = getDecoderMediaFormat(decoder)
         decoder.configure(format, null, null, 0)
         decoder.start()
@@ -351,6 +352,7 @@ class VideoDecodeThread (
         }
 
         videoDecoderListener.onVideoDecoderStopped()
+        firstFrameDecoded = false;
         if (DEBUG) Log.d(TAG, "$name stopped")
     }
 
@@ -362,7 +364,10 @@ class VideoDecodeThread (
             clientListener?.onRTSPFrameReceived(newWidth, newHeight,
                 yuv420ByteArray
             )
-
+            if (!firstFrameDecoded) {
+                firstFrameDecoded = true;
+                clientListener?.onRTSPFirstFrameRendered()
+            }
         } catch (t: Throwable) {
             t.printStackTrace()
         }
