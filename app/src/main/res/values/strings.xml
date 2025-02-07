@@ -4,6 +4,7 @@
     <string name="title_logs">Logs</string>
     <string name="server_connection">Connecting to server…</string>
     <string name="companion_connection"> Connecting to companion…</string>
+    <string name="first_video_frame_decoded">First Video Frame Decoded!</string>
     <string name="server_connected">Connected to server!</string>
     <string name="companion_connected">Connected to companion!</string>
     <string name="refresh_connection_button_text">Refresh Connection</string>
