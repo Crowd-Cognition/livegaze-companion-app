@@ -189,6 +189,8 @@ class MainActivity : AppCompatActivity() {
                 companionConnectionText.text = getString(R.string.device_not_found)
             }
             return;
+        } else {
+            MainService.companionId = companionId
         }
 
         CoroutineScope(Dispatchers.Main).launch {

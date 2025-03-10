@@ -40,7 +40,6 @@ class MainService : Service() {
     private var serviceJob: Job? = null
     var receivedBitmap: Bitmap? = null
     var gazePos: FloatArray = floatArrayOf(0.0f, 0.0f)
-    var companionId: String = "test_id"
     private var videoHandler: RtspVideoHandler? = null
     private var resultParseThread: ResultParseThread? = null
     var firstFrameDecodedLiveData = MutableLiveData<Boolean>().apply {
@@ -53,6 +52,7 @@ class MainService : Service() {
     companion object {
         var serverAddress: String = "http://10.181.202.21:5000"
         var socketIOManager: SocketManager? = null
+        var companionId: String = "test_id"
     }
 
     inner class LocalBinder : Binder() {
