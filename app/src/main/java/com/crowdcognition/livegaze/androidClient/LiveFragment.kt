@@ -279,6 +279,10 @@ class LiveFragment : Fragment() {
 //            Log.d("RTSP Listener", "Image Received ${ids.size()} ${getMatValues(markerList)}")
 //            Log.d("RTSP Listener", "Image Received ${ids.size()}")
         }
+
+        override fun onRTSPFirstFrameRendered() {
+            TODO("Not yet implemented")
+        }
     }
 
 }

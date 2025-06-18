@@ -6,19 +6,29 @@ import io.socket.client.Socket
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.net.URI
 import java.net.URISyntaxException
 
-class SocketManager(uri: String) {
+class SocketManager
+{
     private val socket: Socket?;
 
-    init {
+    constructor(uriString: String) {
+        socket = try {
+            IO.socket(uriString);
+        } catch (e : URISyntaxException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    constructor(uri: URI) {
         socket = try {
             IO.socket(uri);
         } catch (e : URISyntaxException) {
             e.printStackTrace()
             null
         }
-
     }
 
     fun connect() {
@@ -32,8 +42,15 @@ class SocketManager(uri: String) {
         }
     }
 
-    fun sendPing() {
-        socket!!.emit("ping")
+
+    fun sendPing(trackerId : String?) {
+        if (!trackerId.isNullOrEmpty()) {
+            val dataJson = JSONObject();
+            dataJson.put("camera_id", trackerId);
+            socket!!.emit("ping", dataJson);
+        } else {
+            socket!!.emit("ping")
+        }
     }
 
     fun sendData(arucoTagIds: Array<Int>, positionX: Float, positionY: Float, cameraId: String) {

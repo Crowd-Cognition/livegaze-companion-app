@@ -537,11 +537,13 @@ public class GazeRtspClient {
             if (data.length >= 9) {
                 float x = ByteBuffer.wrap(Arrays.copyOfRange(data, 0, 4)).order(ByteOrder.BIG_ENDIAN).getFloat();
                 float y = ByteBuffer.wrap(Arrays.copyOfRange(data, 4, 8)).order(ByteOrder.BIG_ENDIAN).getFloat();
-                boolean isWeared = data[8] == -1;
+                boolean isWorn = data[8] == -1;
+                if (isWorn){
                 dataListener.onGazeDataReady(new float[]{x, y});
+                }
                 long tsLong = System.currentTimeMillis() / 1000;
                 String ts = Long.toString(tsLong);
-                if (DEBUG) Log.i("readData", x + " " + y + " " + isWeared + " " + header.timeStamp + " " + ts + (tsLong - header.timeStamp));
+                if (DEBUG) Log.i("readData", x + " " + y + " " + isWorn + " " + header.timeStamp + " " + ts + (tsLong - header.timeStamp));
             }
         }
     }

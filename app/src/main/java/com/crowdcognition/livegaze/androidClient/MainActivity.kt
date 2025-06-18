@@ -26,6 +26,7 @@ import okhttp3.Response
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.IOException
+import java.net.URI
 
 private const val CLIENT_IP = "127.0.0.1"
 private const val DEFAULT_HTTP_REQUEST = "http://$CLIENT_IP:8080/api/status"
@@ -204,13 +205,15 @@ class MainActivity : AppCompatActivity() {
             serverConnectionText.text = getString(R.string.server_connection)
         }
         socketIOManager?.disconnect()
-        socketIOManager = SocketManager(MainService.serverAddress);
+        val parsedUri = URI.create(MainService.serverAddress);
+        val newUri = URI(parsedUri.scheme, parsedUri.authority, "/gaze", parsedUri.query, parsedUri.fragment)
+        socketIOManager = SocketManager(newUri);
 
         socketIOManager!!.connect()
         socketIOManager!!.listenToEvent("pong", { _ ->
             serverPongReceived()
         })
-        socketIOManager!!.sendPing()
+        socketIOManager!!.sendPing(companionId)
     }
 
     private fun serverPongReceived() {

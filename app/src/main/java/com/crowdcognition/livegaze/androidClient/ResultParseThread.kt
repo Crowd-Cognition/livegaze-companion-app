@@ -109,6 +109,8 @@ class ResultParseThread(private var mainService: MainService, private var imageP
                         )
                     }
                 }
+            } else if (markerList.size == 3) {
+
             }
             if (DEBUG_IMAGE_PARSE){
                 Utils.matToBitmap(img, selectedBitmap)
