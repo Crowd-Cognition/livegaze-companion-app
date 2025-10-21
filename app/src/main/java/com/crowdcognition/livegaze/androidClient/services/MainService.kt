@@ -50,7 +50,7 @@ class MainService : Service() {
     }
 
     companion object {
-        var serverAddress: String = "http://10.181.202.21:5000"
+        var serverAddress: String = "https://livegaze.co"
         var socketIOManager: SocketManager? = null
         var companionId: String = "test_id"
     }

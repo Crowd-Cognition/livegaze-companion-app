@@ -14,12 +14,14 @@
         android:orientation="vertical">
 
         <TextView
+            android:visibility="invisible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Enter server IP"
             android:textSize="15pt"> </TextView>
 
         <EditText
+            android:visibility="invisible"
             android:autofillHints="set your ip"
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
