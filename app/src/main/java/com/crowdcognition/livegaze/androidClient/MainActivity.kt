@@ -7,6 +7,8 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -49,9 +51,9 @@ class MainActivity : AppCompatActivity() {
             serviceBoundState = true
             mainService!!.firstFrameDecodedLiveData.observe(this@MainActivity, {
                 if (it) {
-                    findViewById<TextView>(R.id.sent_first_data).visibility = Button.VISIBLE
+                    findViewById<TextView>(R.id.sent_first_data).visibility = VISIBLE
                 } else {
-                    findViewById<TextView>(R.id.sent_first_data).visibility = Button.INVISIBLE
+                    findViewById<TextView>(R.id.sent_first_data).visibility = INVISIBLE
                 }
             })
         }

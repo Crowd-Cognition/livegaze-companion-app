@@ -13,13 +13,13 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
+import android.os.Debug
 import android.os.IBinder
 import androidx.lifecycle.MutableLiveData
 import com.alexvas.rtsp.GazeDataListener
 import com.alexvas.rtsp.RTSPClientListener
 import com.alexvas.rtsp.demo.R
 import com.alexvas.rtsp.widget.RtspVideoHandler
-import com.crowdcognition.livegaze.androidClient.ImageParseListener
 import com.crowdcognition.livegaze.androidClient.MainActivity
 import com.crowdcognition.livegaze.androidClient.ResultParseThread
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
@@ -122,7 +122,7 @@ class MainService : Service() {
         val gazeUri = Uri.parse(gazeUriText)
         videoHandler?.init(uri, gazeUri, "", "", "rtsp-client-android")
         videoHandler?.debug = true
-        resultParseThread = ResultParseThread(this, imageParseListener)
+        resultParseThread = ResultParseThread(this)
         videoHandler?.start(
             requestVideo = true,
             requestAudio = false,
@@ -212,12 +212,6 @@ class MainService : Service() {
 
         override fun onRtspFirstFrameRendered() {
         }
-    }
-
-    private val imageParseListener = object : ImageParseListener {
-        override fun onObjectParseReady(bitmap: Bitmap) {
-        }
-
     }
 
     private val gazeDataListener = object : GazeDataListener {

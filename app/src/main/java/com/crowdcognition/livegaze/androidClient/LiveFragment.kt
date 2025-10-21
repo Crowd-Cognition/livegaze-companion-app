@@ -19,8 +19,6 @@ import com.alexvas.rtsp.demo.databinding.FragmentLiveBinding
 import com.alexvas.rtsp.widget.RtspVideoHandler
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
 import org.opencv.android.OpenCVLoader
-import org.opencv.aruco.Aruco
-import org.opencv.aruco.Dictionary
 import org.opencv.core.Mat
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.text.StringBuilder
@@ -30,7 +28,6 @@ class LiveFragment : Fragment() {
 
     private lateinit var binding: FragmentLiveBinding
     private lateinit var liveViewModel: LiveViewModel
-    private var arucoDictionary : Dictionary? = null
     private var surfaceHandler : RtspVideoHandler? = null;
     var socketIOManager: SocketManager = SocketManager("http://10.181.215.226:5000")
     var receivedBitmap : Bitmap? = null
@@ -114,7 +111,6 @@ class LiveFragment : Fragment() {
 
         if(!OpenCVLoader.initDebug()) {
         }
-        arucoDictionary = Aruco.getPredefinedDictionary(Aruco.DICT_ARUCO_ORIGINAL)
 
         liveViewModel = ViewModelProvider(this).get(LiveViewModel::class.java)
         binding = FragmentLiveBinding.inflate(inflater, container, false)
@@ -219,20 +215,6 @@ class LiveFragment : Fragment() {
                     + marker.get(0,3)[0] + ", " + marker.get(0,3)[1] + "]")
         }
         return builder.toString()
-    }
-
-    private val imageParseListener = object : ImageParseListener {
-        override fun onObjectParseReady(bitmap: Bitmap) {
-            activity!!.runOnUiThread {
-                binding.apply {
-//                arucoStats.text = "${ids.size()} \n ${getMatValues(markerList)}"
-                    arucoStats.text = "hehehe"
-                    vImage.setImageBitmap(bitmap)
-                    vShutter.visibility = View.INVISIBLE
-                }
-            }
-        }
-
     }
 
     private val gazeDataListener = object : GazeDataListener {
