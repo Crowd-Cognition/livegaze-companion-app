@@ -12,4 +12,5 @@
     <string name="start">start</string>
     <string name="stop">stop</string>
     <string name="device_not_found">Device not found, are the eye trackers safely connected?</string>
+    <string name="enter_server_ip">Enter IP address</string>
 </resources>

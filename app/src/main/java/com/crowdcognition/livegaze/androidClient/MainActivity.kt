@@ -9,19 +9,19 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.lifecycleScope
 import com.alexvas.rtsp.demo.R
+import com.alexvas.rtsp.demo.databinding.ActivityMainBinding
 import com.crowdcognition.livegaze.androidClient.services.MainService
 import com.crowdcognition.livegaze.androidClient.socket_io.SocketManager
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -29,243 +29,263 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.io.IOException
 import java.net.URI
+import androidx.core.content.edit
 
 private const val CLIENT_IP = "127.0.0.1"
 private const val DEFAULT_HTTP_REQUEST = "http://$CLIENT_IP:8080/api/status"
 
+// Singleton OkHttpClient — reuse across requests
+private val httpClient: OkHttpClient by lazy { OkHttpClient() }
+
 class MainActivity : AppCompatActivity() {
 
-    private var mainService: MainService? = null
+    // ViewBinding replaces all findViewById calls
+    private lateinit var binding: ActivityMainBinding
 
+    private var mainService: MainService? = null
     private var serviceBoundState = false
     private var socketIOManager: SocketManager? = null
 
     private val connection = object : ServiceConnection {
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            // we've bound to ExampleLocationForegroundService, cast the IBinder and get ExampleLocationForegroundService instance.
             Timber.d("onServiceConnected")
-
             val binder = service as MainService.LocalBinder
             mainService = binder.getService()
             serviceBoundState = true
-            mainService!!.firstFrameDecodedLiveData.observe(this@MainActivity, {
-                if (it) {
-                    findViewById<TextView>(R.id.sent_first_data).visibility = VISIBLE
-                } else {
-                    findViewById<TextView>(R.id.sent_first_data).visibility = INVISIBLE
-                }
-            })
+
+            mainService?.firstFrameDecodedLiveData?.observe(this@MainActivity) { decoded ->
+                binding.sentFirstData.visibility = if (decoded) VISIBLE else INVISIBLE
+            }
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-            // This is called when the connection with the service has been disconnected. Clean up.
             Timber.d("onServiceDisconnected")
-
             serviceBoundState = false
             mainService = null
         }
     }
 
     private val notificationPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) {
-            // if permission was denied, the service can still run only the notification won't be visible
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            // Permission denied: service still runs, but notification won't show
         }
+
+    // -------------------------------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-//        val navView: BottomNavigationView = findViewById(R.id.nav_view)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        findViewById<EditText>(R.id.ip_input).let {
-            it.doOnTextChanged() { text, _, _, _ ->
-                if (text != null) {
-//                    findViewById<Button>(R.id.start_button).isEnabled = text.isNotEmpty()
-                    MainService.serverAddress = text.toString()
-                }
-            }
-        }
 
-        findViewById<Button>(R.id.refresh_connection_button).let {
-            it.setOnClickListener {
-                refreshConnection()
-            }
-        }
-
-        findViewById<Button>(R.id.start_button).let {
-            it.setOnClickListener {
-                startStopButtonPressed()
-            }
-        }
-
-        MainService.serverAddress =
-            getPreferences(Context.MODE_PRIVATE).getString("serverIp", MainService.serverAddress)!!;
-        findViewById<EditText>(R.id.ip_input).setText(MainService.serverAddress);
+        initSavedPreferences()
+        setupListeners()
         checkAndRequestNotificationPermission()
-
     }
+
+    // -------------------------------------------------------------------------
+    // Setup
+    // -------------------------------------------------------------------------
+
+    private fun initSavedPreferences() {
+        val savedIp = getPreferences(Context.MODE_PRIVATE)
+            .getString("serverIp", MainService.serverAddress)
+            ?: MainService.serverAddress
+
+        MainService.serverAddress = savedIp
+        binding.ipInput.setText(savedIp)
+    }
+
+    private fun setupListeners() {
+        binding.ipInput.doOnTextChanged { text, _, _, _ ->
+            if (!text.isNullOrEmpty()) {
+                MainService.serverAddress = text.toString()
+            }
+        }
+
+        binding.refreshConnectionButton.setOnClickListener {
+            refreshConnection()
+        }
+
+        binding.startButton.setOnClickListener {
+            startStopButtonPressed()
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Permission
+    // -------------------------------------------------------------------------
 
     private fun checkAndRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when (ContextCompat.checkSelfPermission(
+            val granted = ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.POST_NOTIFICATIONS
-            )) {
-                android.content.pm.PackageManager.PERMISSION_GRANTED -> {
-                    // permission already granted
-                }
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-                else -> {
-                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                }
+            if (!granted) {
+                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }
 
-    private fun refreshConnection() {
+    // -------------------------------------------------------------------------
+    // Connection
+    // -------------------------------------------------------------------------
 
-        //Stop service if running
+    private fun refreshConnection() {
         if (serviceBoundState) {
             stopService()
-            val startButton = findViewById<Button>(R.id.start_button)
-            startButton.visibility = Button.INVISIBLE
-
+            binding.startButton.visibility = INVISIBLE
         }
 
-        val companionConnectionText = findViewById<TextView>(R.id.companion_connection_text)
-        companionConnectionText.visibility = TextView.VISIBLE
-        companionConnectionText.text = getString(R.string.companion_connection)
+        binding.companionConnectionText.visibility = VISIBLE
+        binding.companionConnectionText.text = getString(R.string.companion_connection)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        // lifecycleScope is lifecycle-aware — auto-cancelled on destroy
+        lifecycleScope.launch(Dispatchers.IO) {
             val response = makeHttpRequest(DEFAULT_HTTP_REQUEST)
             parseResponse(response)
         }
     }
 
-    private suspend fun makeHttpRequest(url: String): Response? {
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
+    /** Executes a blocking HTTP request — must be called from an IO dispatcher. */
+    private fun makeHttpRequest(url: String): Response? {
+        val request = Request.Builder().url(url).build()
         return try {
-            client.newCall(request).execute()
+            httpClient.newCall(request).execute()
         } catch (e: IOException) {
-            Timber.e("Error making HTTP request: ${e.message}")
+            Timber.e("HTTP request failed: ${e.message}")
             null
         }
     }
 
-    private fun parseResponse(response: Response?) {
-        val companionConnectionText = findViewById<TextView>(R.id.companion_connection_text)
+    /**
+     * Parses the HTTP response and updates the UI accordingly.
+     * Must be called from an IO dispatcher; UI updates are dispatched via [withContext].
+     */
+    private suspend fun parseResponse(response: Response?) {
         if (response == null) {
-            Timber.i("Failed to get response")
-            CoroutineScope(Dispatchers.Main).launch {
-                companionConnectionText.text = getString(R.string.device_not_found)
+            Timber.i("No response received")
+            withContext(Dispatchers.Main) {
+                binding.companionConnectionText.text = getString(R.string.device_not_found)
             }
-            return;
+            return
         }
+
         if (response.code != 200) {
-            Timber.i("Failed to get companion id")
-            Thread.sleep(1000)
-            CoroutineScope(Dispatchers.IO).launch {
-                val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
-                parseResponse(httpResponse!!)
+            Timber.i("Non-200 response (${response.code}), retrying…")
+            delay(1_000)
+            parseResponse(makeHttpRequest(DEFAULT_HTTP_REQUEST))
+            return
+        }
+
+        val jsonString = response.body.string() ?: run {
+            Timber.e("Response body is null")
+            return
+        }
+
+        val companionId = extractCompanionId(jsonString)
+
+        if (companionId.isEmpty()) {
+            withContext(Dispatchers.Main) {
+                binding.companionConnectionText.text = getString(R.string.device_not_found)
             }
-            return;
+            return
         }
 
-        val jsonString = response.body?.string()!!
-        val responseJson = JSONObject(jsonString)
-        val resultArray = responseJson.getJSONArray("result")
-        var companionId = ""
-        for (i in 0 until resultArray.length()) {
-            val result = resultArray.getJSONObject(i)
-            if (result.getString("model") == "Phone")
-                companionId = result.getJSONObject("data").getString("device_id")
-        }
-        if (companionId == "") {
-            //TODO: change texts to indicate failure
-            CoroutineScope(Dispatchers.Main).launch {
-                companionConnectionText.text = getString(R.string.device_not_found)
-            }
-            return;
-        } else {
-            MainService.companionId = companionId
+        MainService.companionId = companionId
+
+        withContext(Dispatchers.Main) {
+            binding.companionConnectionText.text = getString(R.string.companion_connected)
+            binding.serverConnectionText.visibility = VISIBLE
+            binding.serverConnectionText.text = getString(R.string.server_connection)
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
-            companionConnectionText.text = getString(R.string.companion_connected)
-        }
+        connectToSocketServer(companionId)
+    }
 
-
-        val serverConnectionText = findViewById<TextView>(R.id.server_connection_text)
-        CoroutineScope(Dispatchers.Main).launch {
-            serverConnectionText.visibility = TextView.VISIBLE
-            serverConnectionText.text = getString(R.string.server_connection)
+    private fun extractCompanionId(jsonString: String): String {
+        return try {
+            val responseJson = JSONObject(jsonString)
+            val resultArray = responseJson.getJSONArray("result")
+            (0 until resultArray.length())
+                .map { resultArray.getJSONObject(it) }
+                .firstOrNull { it.getString("model") == "Phone" }
+                ?.getJSONObject("data")
+                ?.getString("device_id")
+                ?: ""
+        } catch (e: Exception) {
+            Timber.e("Failed to parse companion ID: ${e.message}")
+            ""
         }
+    }
+
+    private fun connectToSocketServer(companionId: String) {
         socketIOManager?.disconnect()
-        val parsedUri = URI.create(MainService.serverAddress);
-        val newUri = URI(parsedUri.scheme, parsedUri.authority, "/gaze", parsedUri.query, parsedUri.fragment)
-        socketIOManager = SocketManager(newUri);
 
-        socketIOManager!!.connect()
-        socketIOManager!!.listenToEvent("pong", { _ ->
-            serverPongReceived()
-        })
-        socketIOManager!!.sendPing(companionId)
-    }
+        val parsedUri = URI.create(MainService.serverAddress)
+        val gazeUri = URI(
+            parsedUri.scheme,
+            parsedUri.authority,
+            "/gaze",
+            parsedUri.query,
+            parsedUri.fragment
+        )
 
-    private fun serverPongReceived() {
-        Timber.i("Server pong received")
-        CoroutineScope(Dispatchers.Main).launch {
-            val serverConnectionText = findViewById<TextView>(R.id.server_connection_text)
-            serverConnectionText.text = getString(R.string.server_connected)
-            findViewById<Button>(R.id.start_button).visibility = Button.VISIBLE
+        socketIOManager = SocketManager(gazeUri).also { manager ->
+            manager.connect()
+            manager.listenToEvent("pong") { _ -> onServerPongReceived() }
+            manager.sendPing(companionId)
         }
-//        CoroutineScope(Dispatchers.IO).launch {
-//            val httpResponse = makeHttpRequest(DEFAULT_HTTP_REQUEST)
-//            parseResponse(httpResponse!!)
-//        }
     }
+
+    private fun onServerPongReceived() {
+        Timber.i("Server pong received")
+        lifecycleScope.launch(Dispatchers.Main) {
+            binding.serverConnectionText.text = getString(R.string.server_connected)
+            binding.startButton.visibility = VISIBLE
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Service management
+    // -------------------------------------------------------------------------
 
     private fun startStopButtonPressed() {
-        val startButton = findViewById<Button>(R.id.start_button)
         if (serviceBoundState) {
-            startButton.text = getString(R.string.start)
+            binding.startButton.text = getString(R.string.start)
             stopService()
         } else {
-            startButton.text = getString(R.string.stop)
+            binding.startButton.text = getString(R.string.stop)
             startService()
         }
     }
 
     private fun stopService() {
         mainService?.stopService()
-        CoroutineScope(Dispatchers.Main).launch {
-            findViewById<TextView>(R.id.companion_connection_text).visibility = TextView.INVISIBLE
-            findViewById<TextView>(R.id.server_connection_text).visibility = TextView.INVISIBLE
-            findViewById<TextView>(R.id.start_button).visibility = Button.INVISIBLE
-        }
+        binding.companionConnectionText.visibility = INVISIBLE
+        binding.serverConnectionText.visibility = INVISIBLE
+        binding.startButton.visibility = INVISIBLE
     }
 
     private fun startService() {
-        MainService.serverAddress = findViewById<EditText>(R.id.ip_input).text.toString();
+        MainService.serverAddress = binding.ipInput.text.toString()
         MainService.socketIOManager = socketIOManager
-        with(getPreferences(Context.MODE_PRIVATE).edit()) {
-            putString("serverIp", MainService.serverAddress)
-            apply()
-        }
-        Intent(this, MainService::class.java).also {
-            //set main service socketManager
 
-            it.action = "START"
+        getPreferences(Context.MODE_PRIVATE).edit {
+            putString("serverIp", MainService.serverAddress)
+        }
+
+        Intent(this, MainService::class.java).also { intent ->
+            intent.action = "START"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(it)
+                startForegroundService(intent)
             } else {
-                startService(it)
+                startService(intent)
             }
             tryToBindToServiceIfRunning()
         }
